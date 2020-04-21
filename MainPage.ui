@@ -6,14 +6,14 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>700</width>
-    <height>500</height>
+    <width>873</width>
+    <height>591</height>
    </rect>
   </property>
   <property name="maximumSize">
    <size>
-    <width>700</width>
-    <height>500</height>
+    <width>900</width>
+    <height>780</height>
    </size>
   </property>
   <property name="windowTitle">
@@ -21,6 +21,131 @@
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout_3">
+    <item row="2" column="0">
+     <widget class="QFrame" name="MainPage">
+      <property name="frameShape">
+       <enum>QFrame::StyledPanel</enum>
+      </property>
+      <property name="frameShadow">
+       <enum>QFrame::Raised</enum>
+      </property>
+      <layout class="QGridLayout" name="gridLayout">
+       <item row="0" column="0">
+        <layout class="QVBoxLayout" name="verticalLayout_2">
+         <item>
+          <widget class="QLabel" name="label_2">
+           <property name="text">
+            <string>Customer List</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QTableWidget" name="tableWidget">
+           <property name="editTriggers">
+            <set>QAbstractItemView::AnyKeyPressed|QAbstractItemView::EditKeyPressed</set>
+           </property>
+           <property name="alternatingRowColors">
+            <bool>false</bool>
+           </property>
+           <property name="selectionMode">
+            <enum>QAbstractItemView::MultiSelection</enum>
+           </property>
+           <property name="selectionBehavior">
+            <enum>QAbstractItemView::SelectRows</enum>
+           </property>
+           <property name="columnCount">
+            <number>8</number>
+           </property>
+           <column>
+            <property name="text">
+             <string>Cust. ID</string>
+            </property>
+           </column>
+           <column>
+            <property name="text">
+             <string>Title</string>
+            </property>
+           </column>
+           <column>
+            <property name="text">
+             <string>Contact Name</string>
+            </property>
+           </column>
+           <column>
+            <property name="text">
+             <string>Company Name</string>
+            </property>
+           </column>
+           <column>
+            <property name="text">
+             <string>Market Group</string>
+            </property>
+           </column>
+           <column>
+            <property name="text">
+             <string>City</string>
+            </property>
+           </column>
+           <column>
+            <property name="text">
+             <string>Postcode</string>
+            </property>
+           </column>
+           <column>
+            <property name="text">
+             <string>Address</string>
+            </property>
+           </column>
+          </widget>
+         </item>
+         <item>
+          <layout class="QVBoxLayout" name="verticalLayout">
+           <item>
+            <widget class="Line" name="line_2">
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <layout class="QHBoxLayout" name="horizontalLayout">
+             <item>
+              <widget class="QPushButton" name="add_customer_button">
+               <property name="text">
+                <string>Add Customer</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="import_button">
+               <property name="text">
+                <string>Import From File</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="delete_button">
+               <property name="text">
+                <string>Delete</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="print_button">
+               <property name="text">
+                <string>Print</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+          </layout>
+         </item>
+        </layout>
+       </item>
+      </layout>
+     </widget>
+    </item>
     <item row="0" column="0">
      <widget class="QFrame" name="frame">
       <property name="frameShape">
@@ -59,10 +184,10 @@
           </widget>
          </item>
          <item>
-          <widget class="QLineEdit" name="lineEdit_17"/>
+          <widget class="QLineEdit" name="lookup"/>
          </item>
          <item>
-          <widget class="QPushButton" name="pushButton_4">
+          <widget class="QPushButton" name="find_button">
            <property name="text">
             <string>Find</string>
            </property>
@@ -87,128 +212,10 @@
      </widget>
     </item>
     <item row="1" column="0">
-     <widget class="QFrame" name="MainPage">
-      <property name="frameShape">
-       <enum>QFrame::StyledPanel</enum>
+     <widget class="Line" name="line">
+      <property name="orientation">
+       <enum>Qt::Horizontal</enum>
       </property>
-      <property name="frameShadow">
-       <enum>QFrame::Raised</enum>
-      </property>
-      <layout class="QGridLayout" name="gridLayout">
-       <item row="0" column="0">
-        <layout class="QVBoxLayout" name="verticalLayout_2">
-         <item>
-          <widget class="QLabel" name="label_2">
-           <property name="text">
-            <string>Customer List</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QTableWidget" name="tableWidget">
-           <property name="editTriggers">
-            <set>QAbstractItemView::AnyKeyPressed|QAbstractItemView::EditKeyPressed</set>
-           </property>
-           <property name="alternatingRowColors">
-            <bool>false</bool>
-           </property>
-           <property name="selectionMode">
-            <enum>QAbstractItemView::MultiSelection</enum>
-           </property>
-           <property name="selectionBehavior">
-            <enum>QAbstractItemView::SelectRows</enum>
-           </property>
-           <property name="columnCount">
-            <number>8</number>
-           </property>
-           <column>
-            <property name="text">
-             <string>ID</string>
-            </property>
-           </column>
-           <column>
-            <property name="text">
-             <string>Title</string>
-            </property>
-           </column>
-           <column>
-            <property name="text">
-             <string>Contact Name</string>
-            </property>
-           </column>
-           <column>
-            <property name="text">
-             <string>Company Name</string>
-            </property>
-           </column>
-           <column>
-            <property name="text">
-             <string>Market Group</string>
-            </property>
-           </column>
-           <column>
-            <property name="text">
-             <string>City</string>
-            </property>
-           </column>
-           <column>
-            <property name="text">
-             <string>Post Code</string>
-            </property>
-           </column>
-           <column>
-            <property name="text">
-             <string>Address</string>
-            </property>
-           </column>
-          </widget>
-         </item>
-         <item>
-          <layout class="QVBoxLayout" name="verticalLayout">
-           <item>
-            <widget class="QLabel" name="label">
-             <property name="text">
-              <string>Check the customers you want to delete or print</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <layout class="QHBoxLayout" name="horizontalLayout">
-             <item>
-              <widget class="QPushButton" name="pushButton_3">
-               <property name="text">
-                <string>Add Customer</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QPushButton" name="pushButton_5">
-               <property name="text">
-                <string>Import From File</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QPushButton" name="pushButton_2">
-               <property name="text">
-                <string>Delete</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QPushButton" name="pushButton">
-               <property name="text">
-                <string>Print</string>
-               </property>
-              </widget>
-             </item>
-            </layout>
-           </item>
-          </layout>
-         </item>
-        </layout>
-       </item>
-      </layout>
      </widget>
     </item>
    </layout>
@@ -219,24 +226,20 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>700</width>
+     <width>873</width>
      <height>23</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuImport">
     <property name="title">
-     <string>Data</string>
+     <string>File</string>
     </property>
     <addaction name="actionImport_From_Excel"/>
     <addaction name="actionExport_Excel"/>
-   </widget>
-   <widget class="QMenu" name="menuPrint">
-    <property name="title">
-     <string>Print</string>
-    </property>
+    <addaction name="actionExport_Selected"/>
+    <addaction name="actionExport_Sample"/>
    </widget>
    <addaction name="menuImport"/>
-   <addaction name="menuPrint"/>
   </widget>
   <action name="actionImport_From_Excel">
    <property name="text">
@@ -245,7 +248,17 @@
   </action>
   <action name="actionExport_Excel">
    <property name="text">
-    <string>Export Excel</string>
+    <string>Export All</string>
+   </property>
+  </action>
+  <action name="actionExport_Selected">
+   <property name="text">
+    <string>Export Selected</string>
+   </property>
+  </action>
+  <action name="actionExport_Sample">
+   <property name="text">
+    <string>Export Sample FIle</string>
    </property>
   </action>
  </widget>

@@ -2,7 +2,7 @@ import sys
 # import Addlayout
 # from res import MainPage
 # from res.DB import init_db
-import  MainPage
+import MainPage
 from DB import  init_db
 from PyQt5.QtWidgets import QApplication, QMainWindow
 from PyQt5 import QtSql

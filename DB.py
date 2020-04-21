@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, create_engine, DateTime, TIMESTAMP ,text
+from sqlalchemy import Column, String, create_engine, DateTime, TIMESTAMP ,text, Integer
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import ForeignKey
@@ -13,22 +13,26 @@ class Customer(Base):
     __tablename__ = 'customer'
 
     # 表的结构:
-    id = Column(String(20), primary_key=True)
+    # cid = Column(Integer,primary_key=True,autoincrement=True)
+    id = Column(String(50), primary_key=True,index=True)
+    batch = Column(String(50))
     company_name = Column(String(50))
-    contact_name = Column(String(50))
+    contact_name = Column(String(34))
     title = Column(String(5))
-    first_name = Column(String(50))
-    last_name = Column(String(50))
+    other_title = Column(String(20))
+    first_name = Column(String(20))
+    last_name = Column(String(20))
     market_group = Column(String(50))
-    address_one = Column(String(50))
-    address_two = Column(String(50))
-    address_three = Column(String(50))
+    address_one = Column(String(30))
+    address_two = Column(String(30))
+    address_three = Column(String(30))
+    country = Column(String(30))
     # address_four = Column(String(50))
-    phone_number_one = Column(String(10))
-    phone_number_two = Column(String(20))
-    fax_number_one = Column(String(10))
-    fax_number_two = Column(String(20))
-    city = Column(String(100))
+    phone_number_prefix = Column(String(10))
+    phone_number = Column(String(30))
+    fax_number_prefix = Column(String(10))
+    fax_number = Column(String(30))
+    city = Column(String(35))
     post_code = Column(String(10))
     # preferred_center = Column(String(50), ForeignKey("center.id"))
     # cost_center = Column(String(50), ForeignKey("center.id"))
@@ -36,9 +40,15 @@ class Customer(Base):
     email_one = Column(String(50))
     email_two = Column(String(50))
     email_three = Column(String(50))
-    create_date = Column(TIMESTAMP,default=datetime.datetime.now)
-    update_date = Column(TIMESTAMP,onupdate=datetime.datetime.now)
-    # city 和邮编一行，公司名一行，联系人一行，地址三行，国家一行
+    create_date = Column(DateTime, default=datetime.date.today)
+    update_date = Column(DateTime, default=datetime.date.today, onupdate=datetime.date.today)
+    # city 和电话一行，公司名一行，联系人一行，地址三行，国家邮编一行共7行
+
+
+    reserved_one = Column(String(100))
+    reserved_two = Column(String(100))
+    reserved_three = Column(String(100))
+    reserved_four = Column(String(100))
 
     def __repr__(self):
         return self.id
@@ -51,14 +61,19 @@ class Sender(Base):
     id = Column(String(20), primary_key=True)
     sender_name = Column(String(50))
     company_name = Column(String(50))
-    address_one = Column(String(50))
-    address_two = Column(String(50))
-    address_three = Column(String(50))
-    address_four = Column(String(50))
-    phone_number_one = Column(String(10))
+    address_one = Column(String(30))
+    address_two = Column(String(30))
+    address_three = Column(String(30))
+    phone_number = Column(String(20))
+    country = Column(String(30))
 
-    city = Column(String(100))
+    city = Column(String(35))
     post_code = Column(String(10))
+
+    reserved_one = Column(String(100))
+    reserved_two = Column(String(100))
+    reserved_three = Column(String(100))
+    reserved_four = Column(String(100))
 
     create_date = Column(String(50))
     update_date = Column(String(50))
@@ -94,9 +109,9 @@ class Center(Base):
 def init_db():
     engine = create_engine('sqlite:///test2.db',echo=False)
     if not engine.dialect.has_table(engine, 'center'):
-        print('not exist')
+        print('Database not exist')
         Base.metadata.create_all(engine)
         print('created')
     else:
-        print('exist')
+        print('Database already there')
 
