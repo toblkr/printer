@@ -4,8 +4,12 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import ForeignKey
 import datetime
 
+import win32ui
+
 # 创建对象的基类:
 Base = declarative_base()
+
+db_link = 'sqlite:///Printer.db'
 
 # 定义User对象:
 class Customer(Base):
@@ -107,7 +111,7 @@ class Center(Base):
 
 
 def init_db():
-    engine = create_engine('sqlite:///test2.db',echo=False)
+    engine = create_engine(db_link,echo=False)
     if not engine.dialect.has_table(engine, 'center'):
         print('Database not exist')
         Base.metadata.create_all(engine)

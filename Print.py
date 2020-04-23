@@ -9,22 +9,28 @@
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import QMessageBox
-from DB import Customer, Sender
+from DB import Customer, Sender, db_link
 from sqlalchemy import create_engine, MetaData, Table, func
 from sqlalchemy.orm import sessionmaker
 
 import win32ui, win32print, win32con
-
+from main import logger
 
 class Ui_Dialog(QtCore.QObject):
-    x_100 = 0
+    x_100 = 10
     x_80 = 110
+    y_100_distance = 72
+    y_80_distance = 55
+    y_100 = 20
+    y_80 = 20
     length_100 = 650
     length_80 = 590
     current_index = 0
     resized = QtCore.pyqtSignal()
     current_sender = {}
     records_number = 0
+    font_80 = 13
+    font_100 = 17
 
     def setupUi(self, Dialog, customer_list):
         Dialog.setObjectName("Dialog")
@@ -33,6 +39,7 @@ class Ui_Dialog(QtCore.QObject):
         try:
             Dialog.resizeEvent = self.changeEvent
         except Exception as err:
+            logger.info(err, exc_info=True)
             print(err)
         self.gridLayout_5 = QtWidgets.QGridLayout(Dialog)
         self.gridLayout_5.setObjectName("gridLayout_5")
@@ -308,7 +315,6 @@ class Ui_Dialog(QtCore.QObject):
         self.sender_choice_box.activated[str].connect(self.preview_sender)
         self.tag_size_box.activated[str].connect(self.changeEvent)
 
-
     def retranslateUi(self, Dialog):
         _translate = QtCore.QCoreApplication.translate
         Dialog.setWindowTitle(_translate("Dialog", "Dialog"))
@@ -351,7 +357,6 @@ class Ui_Dialog(QtCore.QObject):
         self.print_all_button.clicked.connect(self.print_cust_all)
         self.print_sender_button.clicked.connect(self.print_sender)
 
-
     def init_data(self):
         print("init print page")
         # print(self.customer_list)
@@ -367,7 +372,7 @@ class Ui_Dialog(QtCore.QObject):
             msg.setText('Please connect a printer to your PC and open the printing page again.')
             x = msg.exec_()
 
-        engine = create_engine('sqlite:///test2.db', echo=False)
+        engine = create_engine(db_link, echo=False)
         metadata = MetaData(engine)
         Session = sessionmaker(bind=engine)
         session = Session()
@@ -378,28 +383,40 @@ class Ui_Dialog(QtCore.QObject):
             current_cust['city'] = cust.city
             current_cust['country'] = cust.country
             current_cust['company'] = cust.company_name
-            current_cust['name'] = cust.first_name + cust.last_name
+            current_cust['name'] = cust.first_name + ' ' + cust.last_name
             current_cust['postcode'] = cust.post_code
-            current_cust['phone'] = cust.phone_number_prefix + cust.phone_number
+            current_cust['phone'] = cust.phone_number_prefix + '-' + cust.phone_number
             current_cust['address1'] = cust.address_one.strip(',')
             current_cust['address2'] = cust.address_two.strip(',')
             current_cust['address3'] = cust.address_three.strip(',')
             self.to_print.append(current_cust)
 
         senders = session.query(Sender).all()
-        for sender in senders:
-            self.sender_choice_box.addItem(sender.id)
-        self.preview_sender(self.sender_choice_box.currentText())
+        print(len(senders))
+        if len(senders) == 0:
+            self.save_sender_button.setText('Save')
+        else:
+            for sender in senders:
+                self.sender_choice_box.addItem(sender.id)
+            self.preview_sender(self.sender_choice_box.currentText())
+        # print('123213')
 
         self.records_number = len(self.to_print)
-        if self.records_number <= 1:
+
+        if self.records_number == 0:
+            self.print_all_button.setDisabled(True)
+            self.print_button.setDisabled(True)
+            self.next_button.setDisabled(True)
+
+        if self.records_number == 1:
             self.prev_button.setDisabled(True)
             self.next_button.setDisabled(True)
+            self.print_all_button.setDisabled(True)
         else:
             self.prev_button.setDisabled(True)
 
         # print(self.graphicsView.width())
-        self.show_sender()
+
         if(self.records_number >= 1):
             self.show_cust(self.current_index)
 
@@ -424,7 +441,7 @@ class Ui_Dialog(QtCore.QObject):
         if i.text() == '&Yes':
             print('updating')
             try:
-                engine = create_engine('sqlite:///test2.db', echo=False)
+                engine = create_engine(db_link, echo=False)
                 metadata = MetaData(engine)
                 Session = sessionmaker(bind=engine)
                 session = Session()
@@ -441,6 +458,7 @@ class Ui_Dialog(QtCore.QObject):
                 session.commit()
 
             except Exception as err:
+                logger.info(err, exc_info=True)
                 print(err)
             finally:
                 session.close()
@@ -457,7 +475,7 @@ class Ui_Dialog(QtCore.QObject):
             msg.setText("Please enter your sender ID")
             x = msg.exec_()
         else:
-            engine = create_engine('sqlite:///test2.db', echo=False)
+            engine = create_engine(db_link, echo=False)
             metadata = MetaData(engine)
             Session = sessionmaker(bind=engine)
             session = Session()
@@ -487,6 +505,7 @@ class Ui_Dialog(QtCore.QObject):
                 try:
                     session.add(sender)
                 except Exception as err:
+                    logger.info(err, exc_info=True)
                     print(err)
                     session.rollback()
                 finally:
@@ -501,7 +520,7 @@ class Ui_Dialog(QtCore.QObject):
         print(sender_id)
         self.label_7.setText("Sender detail")
         self.save_sender_button.setText("Update")
-        engine = create_engine('sqlite:///test2.db', echo=False)
+        engine = create_engine(db_link, echo=False)
         metadata = MetaData(engine)
         Session = sessionmaker(bind=engine)
         session = Session()
@@ -533,6 +552,7 @@ class Ui_Dialog(QtCore.QObject):
             self.show_sender()
         except Exception as err:
             print(err)
+            logger.info(err, exc_info=True)
 
     def show_sender(self,):
         # print(width)
@@ -552,43 +572,43 @@ class Ui_Dialog(QtCore.QObject):
                 font2.setPixelSize(10)
 
                 name = self.current_sender['sender_name']
-                line1 = QtWidgets.QGraphicsTextItem('Name:    ' + name + (31-len(name))*' ' )
+                line1 = QtWidgets.QGraphicsTextItem('Name:    ' + name)# + (31-len(name))*' ' )
                 scene.addItem(line1)
                 line1.setPos(0.11*width,0)
                 line1.setFont(font1)
 
                 company = self.current_sender['sender_company']
-                line2 = QtWidgets.QGraphicsTextItem('Company: ' + company + (31-len(company))*' ' )
+                line2 = QtWidgets.QGraphicsTextItem('Company: ' + company)# + (31-len(company))*' ' )
                 scene.addItem(line2)
                 line2.setPos(0.11 * width, distance)
                 line2.setFont(font1)
 
                 address1 = self.current_sender['sender_addr1']
-                line3 = QtWidgets.QGraphicsTextItem('Address: ' + address1 + (31- len(address1))*' ')
+                line3 = QtWidgets.QGraphicsTextItem('Address: ' + address1)# + (31- len(address1))*' ')
                 scene.addItem(line3)
                 line3.setPos(0.11 * width, distance*2)
                 line3.setFont(font1)
 
                 address2 = self.current_sender['sender_addr2']
-                line4 = QtWidgets.QGraphicsTextItem('         ' + address2 + (31- len(address2))*' ' )
+                line4 = QtWidgets.QGraphicsTextItem('         ' + address2)# + (31- len(address2))*' ' )
                 scene.addItem(line4)
                 line4.setPos(0.11 * width, distance*3)
                 line4.setFont(font1)
 
                 address3 = self.current_sender['sender_addr3']
-                line5 = QtWidgets.QGraphicsTextItem('         ' + address3 + (31- len(address3))*' ' )
+                line5 = QtWidgets.QGraphicsTextItem('         ' + address3)# + (31- len(address3))*' ' )
                 scene.addItem(line5)
                 line5.setPos(0.11 * width, distance*4)
                 line5.setFont(font1)
 
                 phone = self.current_sender['sender_phone']
-                line6 = QtWidgets.QGraphicsTextItem('Phone:   ' + phone + (31-len(phone))*' ')
+                line6 = QtWidgets.QGraphicsTextItem('Phone:   ' + phone)# + (31-len(phone))*' ')
                 scene.addItem(line6)
                 line6.setPos(0.11 * width, distance*5)
                 line6.setFont(font1)
 
                 city = self.current_sender['sender_city']
-                line7 = QtWidgets.QGraphicsTextItem('City:    ' + city + (31-len(city))*' ' )
+                line7 = QtWidgets.QGraphicsTextItem('City:    ' + city)# + (31-len(city))*' ' )
                 scene.addItem(line7)
                 line7.setPos(0.11 * width, distance*6)
                 line7.setFont(font1)
@@ -607,6 +627,7 @@ class Ui_Dialog(QtCore.QObject):
                 # scene.addText("Hello, world!").setPos(0, 80)
                 self.graphicsView.setScene(scene)
             except Exception as err:
+                logger.info(err, exc_info=True)
                 print(err)
 
         elif self.tag_size_box.currentText() == '80*60':
@@ -620,43 +641,43 @@ class Ui_Dialog(QtCore.QObject):
             font2.setPixelSize(10)
 
             name = self.current_sender['sender_name']
-            line1 = QtWidgets.QGraphicsTextItem('Name:    ' + name + (31-len(name))*' ' )
+            line1 = QtWidgets.QGraphicsTextItem('Name:    ' + name)# + (31-len(name))*' ' )
             scene.addItem(line1)
             line1.setPos(0.19 * width, 0)
             line1.setFont(font1)
 
             company = self.current_sender['sender_company']
-            line2 = QtWidgets.QGraphicsTextItem('Company: ' + company + (31-len(company))*' ' )
+            line2 = QtWidgets.QGraphicsTextItem('Company: ' + company)# + (31-len(company))*' ' )
             scene.addItem(line2)
             line2.setPos(0.19 * width, distance)
             line2.setFont(font1)
 
             address1 = self.current_sender['sender_addr1']
-            line3 = QtWidgets.QGraphicsTextItem('Address: '+ address1 + (31- len(address1))*' ' )
+            line3 = QtWidgets.QGraphicsTextItem('Address: '+ address1)# + (31- len(address1))*' ' )
             scene.addItem(line3)
             line3.setPos(0.19 * width, distance * 2)
             line3.setFont(font1)
 
             address2 = self.current_sender['sender_addr2']
-            line4 = QtWidgets.QGraphicsTextItem('         ' + address2 + (31- len(address2))*' ')
+            line4 = QtWidgets.QGraphicsTextItem('         ' + address2)# + (31- len(address2))*' ')
             scene.addItem(line4)
             line4.setPos(0.19 * width, distance * 3)
             line4.setFont(font1)
 
             address3 = self.current_sender['sender_addr3']
-            line5 = QtWidgets.QGraphicsTextItem('         ' + address3 + (31- len(address3))*' ')
+            line5 = QtWidgets.QGraphicsTextItem('         ' + address3)# + (31- len(address3))*' ')
             scene.addItem(line5)
             line5.setPos(0.19 * width, distance * 4)
             line5.setFont(font1)
 
             phone = self.current_sender['sender_phone']
-            line6 = QtWidgets.QGraphicsTextItem('Phone:   ' + phone + (31-len(phone))*' ')
+            line6 = QtWidgets.QGraphicsTextItem('Phone:   ' + phone)# + (31-len(phone))*' ')
             scene.addItem(line6)
             line6.setPos(0.19 * width, distance * 5)
             line6.setFont(font1)
 
             city = self.current_sender['sender_city']
-            line7 = QtWidgets.QGraphicsTextItem('City:    ' + city + (31-len(city))*' ')
+            line7 = QtWidgets.QGraphicsTextItem('City:    ' + city)# + (31-len(city))*' ')
             scene.addItem(line7)
             line7.setPos(0.19 * width, distance * 6)
             line7.setFont(font1)
@@ -687,43 +708,43 @@ class Ui_Dialog(QtCore.QObject):
 
 
                 name = self.to_print[index]['name']
-                line1 = QtWidgets.QGraphicsTextItem('Name:' + (35 - len(name)) * ' ' + name)
+                line1 = QtWidgets.QGraphicsTextItem('Name:    ' + name)# + (31-len(name))*' ')
                 scene.addItem(line1)
                 line1.setPos(0.11 * width, 0)
                 line1.setFont(font1)
 
                 company = self.to_print[index]['company']
-                line2 = QtWidgets.QGraphicsTextItem('Company:' + (32 - len(company)) * ' ' + company)
+                line2 = QtWidgets.QGraphicsTextItem('Company: ' + company)# + (31-len(company))*' ')
                 scene.addItem(line2)
                 line2.setPos(0.11 * width, distance)
                 line2.setFont(font1)
 
                 address1 = self.to_print[index]['address1']
-                line3 = QtWidgets.QGraphicsTextItem('Address:' + (32 - len(address1)) * ' ' + address1)
+                line3 = QtWidgets.QGraphicsTextItem('Address: '+ address1)# + (31- len(address1))*' ' )
                 scene.addItem(line3)
                 line3.setPos(0.11 * width, distance * 2)
                 line3.setFont(font1)
 
                 address2 = self.to_print[index]['address2']
-                line4 = QtWidgets.QGraphicsTextItem('        ' + (32 - len(address2)) * ' ' + address2)
+                line4 = QtWidgets.QGraphicsTextItem('         ' + address2)# + (31- len(address2))*' ')
                 scene.addItem(line4)
                 line4.setPos(0.11 * width, distance * 3)
                 line4.setFont(font1)
 
                 address3 = self.to_print[index]['address3']
-                line5 = QtWidgets.QGraphicsTextItem('        ' + (32 - len(address3)) * ' ' + address3)
+                line5 = QtWidgets.QGraphicsTextItem('         ' + address3)# + (31- len(address3))*' ')
                 scene.addItem(line5)
                 line5.setPos(0.11 * width, distance * 4)
                 line5.setFont(font1)
 
                 phone = self.to_print[index]['phone']
-                line6 = QtWidgets.QGraphicsTextItem('Phone:' + (34 - len(phone)) * ' ' + phone)
+                line6 = QtWidgets.QGraphicsTextItem('Phone:   ' + phone)# + (31-len(phone))*' ')
                 scene.addItem(line6)
                 line6.setPos(0.11 * width, distance * 5)
                 line6.setFont(font1)
 
                 city = self.to_print[index]['city']
-                line7 = QtWidgets.QGraphicsTextItem('City:' + (35 - len(city)) * ' ' + city)
+                line7 = QtWidgets.QGraphicsTextItem('City:    ' + city)# + (31-len(city))*' ')
                 scene.addItem(line7)
                 line7.setPos(0.11 * width, distance * 6)
                 line7.setFont(font1)
@@ -731,7 +752,7 @@ class Ui_Dialog(QtCore.QObject):
                 country = self.to_print[index]['country']
                 postcode = self.to_print[index]['postcode']
                 line8 = QtWidgets.QGraphicsTextItem(
-                    'Country: ' + country + (20 - len(postcode) - len(country)) * ' ' + ' Postcode: ' + postcode)
+                    'Country: ' + country + (15 - len(postcode) - len(country)) * ' ' + ' Postcode: ' + postcode)
                 scene.addItem(line8)
                 line8.setPos(0.11 * width, distance * 7)
                 line8.setFont(font1)
@@ -742,6 +763,7 @@ class Ui_Dialog(QtCore.QObject):
                 # scene.addText("Hello, world!").setPos(0, 80)
                 self.graphicsView_2.setScene(scene)
             except Exception as err:
+                logger.info(err, exc_info=True)
                 print(err)
 
         elif self.tag_size_box.currentText() == '80*60':
@@ -756,43 +778,43 @@ class Ui_Dialog(QtCore.QObject):
                 font2.setPixelSize(10)
 
                 name = self.to_print[index]['name']
-                line1 = QtWidgets.QGraphicsTextItem('Name:' + (35 - len(name)) * ' ' + name)
+                line1 = QtWidgets.QGraphicsTextItem('Name:    ' + name)# + (31-len(name))*' ')
                 scene.addItem(line1)
                 line1.setPos(0.19 * width, 0)
                 line1.setFont(font1)
 
                 company = self.to_print[index]['company']
-                line2 = QtWidgets.QGraphicsTextItem('Company:' + (32 - len(company)) * ' ' + company)
+                line2 = QtWidgets.QGraphicsTextItem('Company: ' + company)# + (31-len(company))*' ')
                 scene.addItem(line2)
                 line2.setPos(0.19 * width, distance)
                 line2.setFont(font1)
 
                 address1 = self.to_print[index]['address1']
-                line3 = QtWidgets.QGraphicsTextItem('Address:' + (32 - len(address1)) * ' ' + address1)
+                line3 = QtWidgets.QGraphicsTextItem('Address: '+ address1 )#+ (31- len(address1))*' ' )
                 scene.addItem(line3)
                 line3.setPos(0.19 * width, distance * 2)
                 line3.setFont(font1)
 
                 address2 = self.to_print[index]['address2']
-                line4 = QtWidgets.QGraphicsTextItem('        ' + (32 - len(address2)) * ' ' + address2)
+                line4 = QtWidgets.QGraphicsTextItem('         ' + address2)# + (31- len(address2))*' ')
                 scene.addItem(line4)
                 line4.setPos(0.19 * width, distance * 3)
                 line4.setFont(font1)
 
                 address3 = self.to_print[index]['address3']
-                line5 = QtWidgets.QGraphicsTextItem('        ' + (32 - len(address3)) * ' ' + address3)
+                line5 = QtWidgets.QGraphicsTextItem('         ' + address3)# + (31- len(address3))*' ')
                 scene.addItem(line5)
                 line5.setPos(0.19 * width, distance * 4)
                 line5.setFont(font1)
 
                 phone = self.to_print[index]['phone']
-                line6 = QtWidgets.QGraphicsTextItem('Phone:' + (34 - len(phone)) * ' ' + phone)
+                line6 = QtWidgets.QGraphicsTextItem('Phone:   ' + phone)# + (31-len(phone))*' ')
                 scene.addItem(line6)
                 line6.setPos(0.19 * width, distance * 5)
                 line6.setFont(font1)
 
                 city = self.to_print[index]['city']
-                line7 = QtWidgets.QGraphicsTextItem('City:' + (35 - len(city)) * ' ' + city)
+                line7 = QtWidgets.QGraphicsTextItem('City:    ' + city)# + (31-len(city))*' ')
                 scene.addItem(line7)
                 line7.setPos(0.19 * width, distance * 6)
                 line7.setFont(font1)
@@ -800,20 +822,21 @@ class Ui_Dialog(QtCore.QObject):
                 country = self.to_print[index]['country']
                 postcode = self.to_print[index]['postcode']
                 line8 = QtWidgets.QGraphicsTextItem(
-                    'Country: ' + country + (20 - len(postcode) - len(country)) * ' ' + ' Postcode: ' + postcode)
+                    'Country: ' + country + (15 - len(postcode) - len(country)) * ' ' + ' Postcode: ' + postcode)
                 scene.addItem(line8)
                 line8.setPos(0.19 * width, distance * 7)
                 line8.setFont(font1)
 
                 self.graphicsView_2.setScene(scene)
             except Exception as err:
+                logger.info(err, exc_info=True)
                 print(err)
 
     def prev(self):
         self.current_index -= 1
         if self.current_index == 0:
             self.prev_button.setDisabled(True)
-            self.next_button.setDisabled(False)
+        self.next_button.setDisabled(False)
         self.show_cust(self.current_index)
         # self.show_text()
 
@@ -821,61 +844,161 @@ class Ui_Dialog(QtCore.QObject):
         self.current_index += 1
         if self.current_index == self.records_number - 1:
             self.next_button.setDisabled(True)
-            self.prev_button.setDisabled(False)
+        self.prev_button.setDisabled(False)
         self.show_cust(self.current_index)
 
         # self.show_text()
 
     def print_cust(self):
         # remove printed customer
-        # print(self.tag_size_box.currentText())
-        # print(self.printer_box.currentText())
-        # print(self.to_print)
-        # print(self.graphicsView.width())
         print('print_cust')
+        self.prev_button.setDisabled(True)
+        self.next_button.setDisabled(True)
+        try:
+            if self.tag_size_box.currentText() == '100*80':
+                font_width = self.font_100
+                X = self.x_100
+                Y = self.y_100
+                Y_distance = self.y_100_distance
+            elif self.tag_size_box.currentText() == '80*60':
+                font_width = self.font_80
+                X = self.x_80
+                Y = self.y_80
+                Y_distance = self.y_80_distance
+
+            name = self.to_print[self.current_index]['name']
+            line1 = ('Name:        ' + name)
+            company = self.to_print[self.current_index]['company']
+            line2 = ('Company:  ' + company)
+
+            address1 = self.to_print[self.current_index]['address1']
+            line3 = ('Address:    ' + address1)
+            address2 = self.to_print[self.current_index]['address2']
+            line4 = ('                  ' + address2)
+            address3 = self.to_print[self.current_index]['address3']
+            line5 = ('                  ' + address3)
+
+            phone = self.to_print[self.current_index]['phone']
+            line6 = ('Phone:       ' + phone)
+
+            city = self.to_print[self.current_index]['city']
+            line7 = ('City:           ' + city)
+
+            country = self.to_print[self.current_index]['country']
+            postcode = self.to_print[self.current_index]['postcode']
+            line8 = (
+                    'Country:    ' + country + (20 - len(postcode) - len(country)) * ' ' + ' Postcode: ' + postcode)
+            multi_line_string = [line1, line2, line3, line4, line5, line6, line7, line8]
+            fontdata = {'name': 'Arial', 'weight': win32con.FW_NORMAL, 'height': 60, 'width': font_width}
+
+        except Exception as err:
+            print(err)
+            logger.info(err, exc_info=True)
+
+        try:
+            print(self.next_button.isEnabled())
+            hDC = win32ui.CreateDC()
+            hDC.CreatePrinterDC(self.printer_box.currentText())
+            font = win32ui.CreateFont(fontdata);
+            hDC.SelectObject(font)
+            hDC.StartDoc('alex')
+            hDC.StartPage()
+            for line in multi_line_string:
+                hDC.TextOut(X, Y, line)
+                # 行距, 唯一影响行数
+                Y += Y_distance
+
+            hDC.EndPage()
+            hDC.EndDoc()
+
+            # base on current index
+            # print(self.current_index)
+            # print(self.to_print)
+            print(self.next_button.isEnabled())
+            if self.current_index != 0:
+                self.prev_button.setDisabled(False)
+            if self.current_index != len(self.to_print)-1:
+                self.next_button.setDisabled(False)
+
+            # if self.current_index == 0 and len(self.to_print) == 1:
+            #     self.prev_button.setDisabled(True)
+            #     self.next_button.setDisabled(True)
+            # elif len(self.to_print) > 1 and self.current_index == len(self.to_print) - 1 :
+            #     self.current_index -= 1
+            #     self.to_print.pop(-1)
+            #     self.show_cust(self.current_index)
+            #     self.prev_button.setDisabled(False)
+            #     if self.current_index == 0:
+            #         self.prev_button.setDisabled(True)
+            # else:
+            #     self.to_print.pop(self.current_index)
+            #     # self.current_index += 1
+            #     self.show_cust(self.current_index)
+            #     if self.current_index != len(self.to_print) - 1:
+            #
+
+            # print(self.current_index)
+            # print(self.to_print)
+        except Exception as err:
+            print(err)
+            logger.info(err, exc_info=True)
 
 
     def print_cust_all(self):
-        pass
+        self.prev_button.setDisabled(True)
+        self.next_button.setDisabled(True)
+        self.current_index = 0
+        self.show_cust(self.current_index)
+        for i in range(len(self.to_print)):
+            self.show_cust(self.current_index)
+            self.print_cust()
+            if self.current_index != len(self.to_print)-1:
+                self.current_index += 1
+        self.prev_button.setDisabled(False)
+        self.next_button.setDisabled(True)
+
 
     def print_sender(self):
         try:
             print('ready to print')
             if self.tag_size_box.currentText() == '100*80':
-                font_width = 14
+                font_width = self.font_100
                 X = self.x_100
-                Y = 0
+                Y = self.y_100
+                Y_distance = self.y_100_distance
             elif self.tag_size_box.currentText() == '80*60':
-                font_width = 13
+                font_width = self.font_100
                 X = self.x_80
-                Y = 0
+                Y = self.y_80
+                Y_distance = self.y_80_distance
 
             name = self.current_sender['sender_name']
-            line1 = ('Name:       ' + name)
+            line1 = ('Name:        ' + name)
             company = self.current_sender['sender_company']
-            line2 = ('Company: ' + company)
+            line2 = ('Company:  ' + company)
 
             address1 = self.current_sender['sender_addr1']
             line3 = ('Address:    ' + address1)
             address2 = self.current_sender['sender_addr2']
-            line4 = ('                 ' + address2)
+            line4 = ('                  ' + address2)
             address3 = self.current_sender['sender_addr3']
-            line5 = ('                 ' + address3)
+            line5 = ('                  ' + address3)
 
             phone = self.current_sender['sender_phone']
-            line6 = ('Phone:      ' + phone)
+            line6 = ('Phone:       ' + phone)
 
             city = self.current_sender['sender_city']
-            line7 = ('City:          ' + city)
+            line7 = ('City:           ' + city)
 
             country = self.current_sender['sender_country']
             postcode = self.current_sender['sender_postcode']
             line8 = (
-                'Country:   ' + country + 2*(20 - len(postcode) - len(country)) * ' ' + ' Postcode: ' + postcode)
+                'Country:    ' + country + (20 - len(postcode) - len(country)) * ' ' + ' Postcode: ' + postcode)
             multi_line_string = [line1,line2,line3,line4,line5,line6,line7,line8]
 
             fontdata = {'name': 'Arial', 'weight': win32con.FW_NORMAL, 'height': 60, 'width': font_width}
         except Exception as err:
+            logger.info(err, exc_info=True)
             print(err)
         print('before print')
         try:
@@ -888,21 +1011,24 @@ class Ui_Dialog(QtCore.QObject):
             for line in multi_line_string:
                 hDC.TextOut(X, Y, line)
                 # 行距, 唯一影响行数
-                Y += 60
+                Y += Y_distance
 
             hDC.EndPage()
             hDC.EndDoc()
         except Exception as err:
+            logger.info(err, exc_info=True)
             print(err)
 
 
     def changeEvent(self,e):
         try:
             print('change event')
-            self.show_sender()
+            if self.sender_choice_box.currentText()!= '':
+                self.show_sender()
             if(len(self.to_print) >= 1):
                 self.show_cust(self.current_index)
         except Exception as err:
+            logger.info(err, exc_info=True)
             print(err)
 
         # print('changed')

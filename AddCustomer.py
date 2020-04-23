@@ -9,14 +9,17 @@
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import QMessageBox
-from DB import Customer
+from DB import Customer, db_link
 from sqlalchemy import create_engine, MetaData, Table, func
 from sqlalchemy.orm import sessionmaker
 
 import Print
+from main import logger
+
 
 class Ui_Dialog(QtWidgets.QDialog):
     the_signal = QtCore.pyqtSignal()
+    original_id = ''
 
     def setupUi(self, Dialog, customer_id=None):
         Dialog.setObjectName("Dialog")
@@ -399,11 +402,12 @@ class Ui_Dialog(QtWidgets.QDialog):
 
         print(self.title_box.currentText())
         print(customer_id)
+        self.original_id = customer_id
         if customer_id:
             self.customer_id.setText(customer_id)
             self.load_data(customer_id)
             self.edit = True
-            self.save_button.setText('Update / Save')
+            # self.save_button.setText('Update / Save')
         else:
             self.edit = False
 
@@ -454,9 +458,10 @@ class Ui_Dialog(QtWidgets.QDialog):
         self.save_button.clicked.connect(self.save)
         # print(self.title_box.currentText())
         self.print_button.clicked.connect(self.print)
+        self.customer_id.textChanged.connect(self.customer_changed)
 
     def load_data(self, customer_id):
-        engine = create_engine('sqlite:///test2.db', echo=False)
+        engine = create_engine(db_link, echo=False)
         metadata = MetaData(engine)
         Session = sessionmaker(bind=engine)
         session = Session()
@@ -492,6 +497,7 @@ class Ui_Dialog(QtWidgets.QDialog):
             self.market_group.setText(cus.market_group)
             self.notes.setText(cus.notes)
         except Exception as err:
+            logger.info(err, exc_info=True)
             print(err)
 
     def title_selected(self, text):
@@ -505,7 +511,7 @@ class Ui_Dialog(QtWidgets.QDialog):
         customer_id = self.customer_id.text()
         if customer_id:
             # check if exist
-            engine = create_engine('sqlite:///test2.db', echo=False)
+            engine = create_engine(db_link, echo=False)
             metadata = MetaData(engine)
             Session = sessionmaker(bind=engine)
             session = Session()
@@ -516,6 +522,7 @@ class Ui_Dialog(QtWidgets.QDialog):
                     self.window.show()
                     self.ui.init_data()
                 except Exception as err:
+                    logger.info(err, exc_info=True)
                     print(err)
 
             else:
@@ -530,32 +537,32 @@ class Ui_Dialog(QtWidgets.QDialog):
             x = msg.exec_()
 
     def save(self):
-        id = self.customer_id.text()
-        company_name = self.company_name.text()
-        contact_name = self.full_name.text()
-        title = self.title_box.currentText()
-        other_title = self.other_title.text()
-        first_name = self.first_name.text()
-        last_name = self.last_name.text()
-        market_group = self.market_group.text()
-        address_one = self.addr1.text()
-        address_two = self.addr2.text()
-        address_three = self.addr3.text()
-        phone_number_prefix = self.phone1.text()
-        phone_number = self.phone2.text()
-        fax_number_prefix = self.fax1.text()
-        fax_number = self.fax2.text()
-        city = self.city.text()
-        country = self.country.text()
-        post_code = self.postcode.text()
-        notes = self.notes.toPlainText()
-        email_one = self.email1.text()
-        email_two = self.email2.text()
-        email_three = self.email3.text()
+        id = self.customer_id.text().strip()
+        company_name = self.company_name.text().strip()
+        contact_name = self.full_name.text().strip()
+        title = self.title_box.currentText().strip()
+        other_title = self.other_title.text().strip()
+        first_name = self.first_name.text().strip()
+        last_name = self.last_name.text().strip()
+        market_group = self.market_group.text().strip()
+        address_one = self.addr1.text().strip()
+        address_two = self.addr2.text().strip()
+        address_three = self.addr3.text().strip()
+        phone_number_prefix = self.phone1.text().strip()
+        phone_number = self.phone2.text().strip()
+        fax_number_prefix = self.fax1.text().strip()
+        fax_number = self.fax2.text().strip()
+        city = self.city.text().strip()
+        country = self.country.text().strip()
+        post_code = self.postcode.text().strip()
+        notes = self.notes.toPlainText().strip()
+        email_one = self.email1.text().strip()
+        email_two = self.email2.text().strip()
+        email_three = self.email3.text().strip()
         print(title)
         if self.edit == False:
             try:
-                engine = create_engine('sqlite:///test2.db', echo=False)
+                engine = create_engine(db_link, echo=False)
                 metadata = MetaData(engine)
                 Session = sessionmaker(bind=engine)
                 session = Session()
@@ -579,33 +586,49 @@ class Ui_Dialog(QtWidgets.QDialog):
                     self.the_signal.emit()
             except Exception as err:
                 print(err)
+                logger.info(err, exc_info=True)
         else:
             try:
                 print('sttst')
-                engine = create_engine('sqlite:///test2.db', echo=False)
+                engine = create_engine(db_link, echo=False)
                 metadata = MetaData(engine)
                 Session = sessionmaker(bind=engine)
                 session = Session()
-                create_date = session.query(Customer).filter_by(id=id).first().create_date
-                cus = session.query(Customer).filter_by(id=id).first()
-                session.delete(cus)
-                print('saving:' + title)
-                cus = Customer(id=id, company_name=company_name, contact_name=contact_name, title=title,
-                               other_title=other_title,
-                               first_name=first_name, last_name=last_name, market_group=market_group,
-                               address_one=address_one,
-                               address_two=address_two, address_three=address_three,
-                               phone_number_prefix=phone_number_prefix,
-                               phone_number=phone_number, fax_number_prefix=fax_number_prefix, fax_number=fax_number,
-                               city=city,
-                               post_code=post_code, notes=notes, email_one=email_one, email_two=email_two, country=country,
-                               email_three=email_three
-                               )
-                session.add(cus)
+                exist = session.query(Customer).filter_by(id=id).first()
+                if id == self.original_id:
+                    cus = session.query(Customer).filter_by(id=id).first()
+                    cus.company_name = company_name
+                    cus.contact_name = contact_name
+                    cus.title, cus.other_title, cus.first_name, cus.last_name = title,other_title,first_name,last_name
+                    cus.market_group, cus.address_one, cus.address_two, cus.address_three = market_group, address_one, address_two, address_three
+                    cus.phone_number_prefix, cus.phone_number, cus.fax_number_prefix, cus.fax_number = phone_number_prefix,phone_number,fax_number_prefix,fax_number
+                    cus.city,cus.post_code,cus.notes,cus.email_one,cus.email_two,cus.email_three = city,post_code,notes,email_one,email_two,email_three
+                    cus.country = country
+
+                elif exist:
+                    msg = QMessageBox()
+                    msg.setWindowTitle("Duplicated Customer ID")
+                    msg.setText('Please edit your customer ID')
+                    x = msg.exec_()
+                else:
+                    print('saving:' + title)
+                    cus = Customer(id=id, company_name=company_name, contact_name=contact_name, title=title,
+                                   other_title=other_title,
+                                   first_name=first_name, last_name=last_name, market_group=market_group,
+                                   address_one=address_one,
+                                   address_two=address_two, address_three=address_three,
+                                   phone_number_prefix=phone_number_prefix,
+                                   phone_number=phone_number, fax_number_prefix=fax_number_prefix, fax_number=fax_number,
+                                   city=city,
+                                   post_code=post_code, notes=notes, email_one=email_one, email_two=email_two, country=country,
+                                   email_three=email_three
+                                   )
+                    session.add(cus)
                 session.commit()
                 self.the_signal.emit()
             except Exception as err:
                 print(err)
+                logger.info(err, exc_info=True)
 
 
     def delete(self):
@@ -624,7 +647,7 @@ class Ui_Dialog(QtWidgets.QDialog):
             try:
                 print(self.selected)
                 to_delete = self.customer_id.text()
-                engine = create_engine('sqlite:///test2.db', echo=False)
+                engine = create_engine(db_link, echo=False)
                 metadata = MetaData(engine)
                 Session = sessionmaker(bind=engine)
                 session = Session()
@@ -636,9 +659,15 @@ class Ui_Dialog(QtWidgets.QDialog):
                 self.clear()
                 self.init_data()
             except Exception as err:
+                logger.info(err, exc_info=True)
                 print(err)
             finally:
                 session.close()
         else:
             pass
 
+    def customer_changed(self):
+        if self.customer_id.text() != self.original_id:
+            self.save_button.setText('Save New')
+        else:
+            self.save_button.setText('Update')

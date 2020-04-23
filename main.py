@@ -1,4 +1,6 @@
 import sys
+import win32ui
+
 # import Addlayout
 # from res import MainPage
 # from res.DB import init_db
@@ -8,13 +10,19 @@ from PyQt5.QtWidgets import QApplication, QMainWindow
 from PyQt5 import QtSql
 from PyQt5.QtSql import QSqlQuery
 
-
-
+import logging
+logger = logging.getLogger(__name__)
+logger.setLevel(level=logging.INFO)
+handler = logging.FileHandler('output.log')
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+handler.setFormatter(formatter)
+logger.addHandler(handler)
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     # database = QtSql.QSqlDatabase.addDatabase('QSQLITE')
     # database.setDatabaseName('test.db')
+
     init_db()
 
     # if not database.open():

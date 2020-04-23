@@ -16,8 +16,8 @@ from PyQt5.QtWidgets import QMessageBox, QFileDialog
 import xlrd
 
 import AddCustomer, Print
-from DB import Customer
-
+from DB import Customer,db_link
+from main import logger
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -208,7 +208,7 @@ class Ui_MainWindow(object):
     def init_data(self):
         # read all from current database
         self.clear()
-        engine = create_engine('sqlite:///test2.db', echo=False)
+        engine = create_engine(db_link, echo=False)
         metadata = MetaData(engine)
         Session = sessionmaker(bind=engine)
         session = Session()
@@ -308,7 +308,7 @@ class Ui_MainWindow(object):
             self.add_customer(customer_id)
 
         except Exception as err:
-            print(err)
+            logger.info(err, exc_info=True)
             msg = QMessageBox()
             msg.setWindowTitle("Error")
             msg.setText(err)
@@ -344,7 +344,7 @@ class Ui_MainWindow(object):
                 self.window.show()
                 self.ui.the_signal.connect(self.init_data)
         except Exception as err:
-            print(err)
+            logger.info(err, exc_info=True)
             msg = QMessageBox()
             msg.setWindowTitle("Error")
             msg.setText(err)
@@ -354,7 +354,7 @@ class Ui_MainWindow(object):
         try:
             self.clear()
             from sqlalchemy import or_
-            engine = create_engine('sqlite:///test2.db', echo=False)
+            engine = create_engine(db_link, echo=False)
             metadata = MetaData(engine)
             Session = sessionmaker(bind=engine)
             session = Session()
@@ -409,6 +409,7 @@ class Ui_MainWindow(object):
                 self.reset()
             session.close()
         except Exception as err:
+            logger.info(err, exc_info=True)
             msg = QMessageBox()
             msg.setWindowTitle("Error")
             msg.setText(err)
@@ -421,7 +422,7 @@ class Ui_MainWindow(object):
             try:
                 print(self.selected)
                 to_delete = self.selected
-                engine = create_engine('sqlite:///test2.db', echo=False)
+                engine = create_engine(db_link, echo=False)
                 metadata = MetaData(engine)
                 Session = sessionmaker(bind=engine)
                 session = Session()
@@ -433,7 +434,7 @@ class Ui_MainWindow(object):
                 self.clear()
                 self.init_data()
             except Exception as err:
-                pass
+                logger.info(err, exc_info=True)
             finally:
                 session.close()
         else:
@@ -451,6 +452,7 @@ class Ui_MainWindow(object):
             x = msg.exec_()
 
         except Exception as err:
+            logger.info(err, exc_info=True)
             msg = QMessageBox()
             msg.setWindowTitle("Error")
             msg.setText(err)
@@ -472,9 +474,10 @@ class Ui_MainWindow(object):
             self.ui.init_data()
         except Exception as err:
             print(err)
+            logger.info(err, exc_info=True)
 
     def import_from_file(self):
-        engine = create_engine('sqlite:///test2.db', echo=False)
+        engine = create_engine(db_link, echo=False)
         metadata = MetaData(engine)
         Session = sessionmaker(bind=engine)
         session = Session()
@@ -549,7 +552,7 @@ class Ui_MainWindow(object):
                 print('erer')
                 pass
         except Exception as err:
-            print(err)
+            logger.info(err, exc_info=True)
             msg = QMessageBox()
             msg.setWindowTitle("Error")
             msg.setText(err)
@@ -572,7 +575,7 @@ class Ui_MainWindow(object):
                 format1 = workbook.add_format({'num_format': 'yyyy-mm-dd'})
                 sheet = workbook.add_worksheet()
 
-                engine = create_engine('sqlite:///test2.db', echo=False)
+                engine = create_engine(db_link, echo=False)
                 metadata = MetaData(engine)
                 Session = sessionmaker(bind=engine)
                 session = Session()
@@ -615,7 +618,7 @@ class Ui_MainWindow(object):
                 workbook.close()
                 print(file_name)
             except Exception as err:
-                print(err)
+                logger.info(err, exc_info=True)
                 os.remove(file_name)
         else:
             pass
@@ -678,7 +681,7 @@ class Ui_MainWindow(object):
                 workbook.close()
                 print(file_name)
             except Exception as err:
-                print(err)
+                logger.info(err, exc_info=True)
                 # os.remove(file_name)
         else:
             pass
