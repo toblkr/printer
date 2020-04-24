@@ -165,7 +165,7 @@ class Ui_MainWindow(object):
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
-        MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
+        MainWindow.setWindowTitle(_translate("MainWindow", "Customer Printing"))
         self.label_2.setText(_translate("MainWindow", "Customer List"))
         item = self.tableWidget.horizontalHeaderItem(0)
         item.setText(_translate("MainWindow", "Cust. ID"))
@@ -297,17 +297,16 @@ class Ui_MainWindow(object):
 
     def double_clicked(self, mi):
         # go to detail page
-
         try:
             row = mi.row()
             column = mi.column()
             # print(row)
             # print(column)
             customer_id = self.tableWidget.item(row, 0).text()
-            # print(customer_id)
             self.add_customer(customer_id)
 
         except Exception as err:
+            print(err)
             logger.info(err, exc_info=True)
             msg = QMessageBox()
             msg.setWindowTitle("Error")
@@ -334,15 +333,16 @@ class Ui_MainWindow(object):
 
                 self.window.show()
                 self.ui.the_signal.connect(self.init_data)
+                self.ui.the_signal2.connect(self.search_customer_from_add)
             else:
+                print('1')
                 self.window = QtWidgets.QDialog(None, QtCore.Qt.WindowSystemMenuHint | QtCore.Qt.WindowCloseButtonHint)
                 self.ui = AddCustomer.Ui_Dialog()
-
-
                 self.ui.setupUi(self.window, customer_id)
 
                 self.window.show()
                 self.ui.the_signal.connect(self.init_data)
+                self.ui.the_signal2.connect(self.search_customer_from_add)
         except Exception as err:
             logger.info(err, exc_info=True)
             msg = QMessageBox()
@@ -350,7 +350,9 @@ class Ui_MainWindow(object):
             msg.setText(err)
             x = msg.exec_()
 
-    def search_customer(self):
+    # @QtCore.pyqtSlot(str)
+    def search_customer_from_add(self, message):
+        print(message)
         try:
             self.clear()
             from sqlalchemy import or_
@@ -358,7 +360,76 @@ class Ui_MainWindow(object):
             metadata = MetaData(engine)
             Session = sessionmaker(bind=engine)
             session = Session()
-            word = self.lookup.text()
+            word = message
+            search = "%{}%".format(word)
+            print(search)
+            # customer = session.query(Customer).all()
+            customers = session.query(Customer).filter(or_(Customer.address_one.like(search),
+                                                           Customer.address_two.like(search),
+                                                           Customer.contact_name.like(search),
+                                                           Customer.id.like(search),
+                                                           Customer.company_name.like(search),
+                                                           Customer.market_group.like(search),
+                                                           Customer.batch.like(search),
+                                                           Customer.city.like(search)))
+            if len(customers.all()) == 0:
+                # pop a dialog to tell no found
+                print('0')
+                self.label_2.setText('No record found')
+            else:
+                # show in widget
+                self.label_2.setText('{} records found'.format(len(customers.all())))
+                for each_customer in customers:
+                    current_customer = dict()
+                    current_customer['id'] = each_customer.id
+                    current_customer['batch'] = each_customer.batch
+
+                    first_name = '' if each_customer.first_name is None else each_customer.first_name
+                    last_name = '' if each_customer.first_name is None else each_customer.last_name
+                    current_customer['contact'] = first_name + ' ' + last_name
+
+                    company_name = '' if each_customer.company_name is None else each_customer.company_name
+                    current_customer['company'] = company_name
+
+                    market_group = '' if each_customer.market_group is None else each_customer.market_group
+                    current_customer['market'] = market_group
+
+                    city = '' if each_customer.city is None else each_customer.city
+                    current_customer['city'] = city
+
+                    post_code = '' if each_customer.post_code is None else each_customer.post_code
+                    current_customer['post_code'] = post_code
+
+                    address_one = '' if each_customer.address_one is None else each_customer.address_one
+                    address_two = '' if each_customer.address_two is None else each_customer.address_two
+                    address_three = '' if each_customer.address_three is None else each_customer.address_three
+                    current_customer['address'] = (address_one.strip(',') + ',' + \
+                                                   address_two.strip(',') + ',' + \
+                                                   address_three.strip(',')).strip(',')
+                    self.current_list.append(current_customer)
+                self.load_data()
+                self.reset()
+            session.close()
+        except Exception as err:
+            logger.info(err, exc_info=True)
+            msg = QMessageBox()
+            msg.setWindowTitle("Error")
+            msg.setText(err)
+            x = msg.exec_()
+
+    def search_customer(self, kw=None):
+        print(kw)
+        try:
+            self.clear()
+            from sqlalchemy import or_
+            engine = create_engine(db_link, echo=False)
+            metadata = MetaData(engine)
+            Session = sessionmaker(bind=engine)
+            session = Session()
+            if kw:
+                word = kw
+            else:
+                word = self.lookup.text()
             search = "%{}%".format(word)
             print(search)
             # customer = session.query(Customer).all()
@@ -487,7 +558,7 @@ class Ui_MainWindow(object):
             file_name, _ = QFileDialog.getOpenFileName(file_dialog, "Import Data", self.cwd,
                                                        "Excel Workbook(*.xlsx);;Excel 97-Excel 2003 Workbook(*.xls)")
             if file_name:
-                print(file_name)
+                # print(file_name)
                 # load data into database
                 workbook = xlrd.open_workbook(file_name)
                 worksheet = workbook.sheet_by_index(0)
@@ -497,10 +568,21 @@ class Ui_MainWindow(object):
                     # print(worksheet.row_values(i))
                     id = worksheet.row_values(i)[0]
                     cus = session.query(Customer).filter_by(id=id).first()
-                    if cus:
-                        id = id + '(1)'
-                    else:
-                        pass
+
+                    while session.query(Customer).filter_by(id=id).first():
+                        # print(id)
+                        if len(id) > 3 and id[-3] == '(' and id[-1] == ')' and id[-2].isdigit():
+                            # print(cus.id)
+                            # print(str(int(id[-2])+1))
+                            try:
+                                id = id[:-2] + str(int(id[-2]) + 1) + id[-1]
+                                # print(id)
+                            except Exception as err:
+                                print(err)
+                        else:
+                            id = id + '(1)'
+
+
                     batch = worksheet.row_values(i)[1]
                     company_name = worksheet.row_values(i)[2]
                     contact_name = worksheet.row_values(i)[3]
@@ -513,6 +595,7 @@ class Ui_MainWindow(object):
                     address_two = worksheet.row_values(i)[10]
                     address_three = worksheet.row_values(i)[11]
                     phone_number_prefix = worksheet.row_values(i)[12]
+
                     phone_number = worksheet.row_values(i)[13]
                     fax_number_prefix = worksheet.row_values(i)[14]
                     fax_number = worksheet.row_values(i)[15]
@@ -525,25 +608,36 @@ class Ui_MainWindow(object):
                     email_three = worksheet.row_values(i)[22]
                     excel_create_date = worksheet.row_values(i)[23]
                     excel_update_date = worksheet.row_values(i)[24]
-                    print(type(excel_create_date))
-                    print(int(excel_create_date))
-                    print(round(excel_create_date))
+                    # print(type(excel_create_date))
+                    # print(int(excel_create_date))
+                    # print(round(excel_create_date))
 
                     create_date = xlrd.xldate_as_datetime(float(excel_create_date), 0)
                     update_date = xlrd.xldate_as_datetime(float(excel_update_date), 0)
                     # update_date = datetime.datetime(*xlrd.xldate_as_tuple(excel_update_date,workbook.datemode))
 
 
-                    print(create_date)
-                    print(type(create_date))
+                    # print(create_date)
+                    # print(type(create_date))
 
-                    rows.append(Customer(id=id,batch=batch,company_name=company_name,contact_name=contact_name,title=title,other_title=other_title,
+                    session.add(Customer(id=id,batch=batch,company_name=company_name,contact_name=contact_name,title=title,other_title=other_title,
                                          first_name=first_name,last_name=last_name,market_group=market_group,address_one=address_one,
                                          address_two=address_two,address_three=address_three,phone_number_prefix=phone_number_prefix,country=country,
                                          phone_number=phone_number,fax_number_prefix=fax_number_prefix,fax_number=fax_number,city=city,
                                          post_code=post_code,notes=notes,email_one=email_one,email_two=email_two,email_three=email_three,create_date=create_date
                                          ,update_date=update_date))
-                session.bulk_save_objects(rows)
+                # print(rows)
+                # print(rows[0])
+                # print(rows[0].id)
+                # print(rows[1].id)
+                # print(rows[2].id)
+                # print(rows[3].id)
+                # print(rows[4].id)
+                # try:
+                #     # session.bulk_save_objects(rows)
+                # except Exception as err:
+                #     print(err)
+                print('end')
                 session.commit()
                 session.close()
                 self.clear()
@@ -552,6 +646,7 @@ class Ui_MainWindow(object):
                 print('erer')
                 pass
         except Exception as err:
+            session.rollback()
             logger.info(err, exc_info=True)
             msg = QMessageBox()
             msg.setWindowTitle("Error")

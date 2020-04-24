@@ -19,6 +19,7 @@ from main import logger
 
 class Ui_Dialog(QtWidgets.QDialog):
     the_signal = QtCore.pyqtSignal()
+    the_signal2 = QtCore.pyqtSignal(str)
     original_id = ''
 
     def setupUi(self, Dialog, customer_id=None):
@@ -400,22 +401,31 @@ class Ui_Dialog(QtWidgets.QDialog):
 
 
 
-        print(self.title_box.currentText())
-        print(customer_id)
+        # print(self.title_box.currentText())
+        # print(customer_id)
         self.original_id = customer_id
+
         if customer_id:
-            self.customer_id.setText(customer_id)
-            self.load_data(customer_id)
-            self.edit = True
+            print(self.original_id)
+            print('yes id')
+            try:
+                self.edit = True
+                self.customer_id.setText(self.original_id)
+                print(self.customer_id.text())
+                self.load_data(customer_id)
+
             # self.save_button.setText('Update / Save')
+            except Exception as err:
+                logger.info(err, exc_info=True)
+                print(err)
         else:
             self.edit = False
 
-        self.window
+
 
     def retranslateUi(self, Dialog):
         _translate = QtCore.QCoreApplication.translate
-        Dialog.setWindowTitle(_translate("Dialog", "Dialog"))
+        Dialog.setWindowTitle(_translate("Dialog", "Add Customer"))
 
         self.label_17.setText(_translate("Dialog", "* Customer ID:"))
         self.label_batch.setText(_translate("Dialog", "Batch:"))
@@ -453,12 +463,137 @@ class Ui_Dialog(QtWidgets.QDialog):
         self.label_18.setText(_translate("Dialog", "Lookup: "))
         self.find_button.setText(_translate("Dialog", "Find"))
 
+        self.find_button.clicked.connect(self.find)
+
         self.title_box.activated[str].connect(self.title_selected)
         # self.add_another_button.clicked.connect(self.add_another)
         self.save_button.clicked.connect(self.save)
         # print(self.title_box.currentText())
         self.print_button.clicked.connect(self.print)
-        self.customer_id.textChanged.connect(self.customer_changed)
+        # self.customer_id.textChanged.connect(self.customer_changed)
+        # self.first_name.textChanged.connect(self.get_full_name)
+        # self.last_name.textChanged.connect(self.get_full_name)
+        #
+        # #input limitation
+        # self.addr3.textChanged.connect(self.limitation)
+        # self.addr2.textChanged.connect(self.limitation)
+        # self.addr1.textChanged.connect(self.limitation)
+        # self.last_name.textChanged.connect(self.limitation)
+        # self.first_name.textChanged.connect(self.limitation)
+        # self.company_name.textChanged.connect(self.limitation)
+        # self.country.textChanged.connect(self.limitation)
+        # self.city.textChanged.connect(self.limitation)
+        # # self.customer_id.textChanged.connect(self.limitation)
+        # self.email3.textChanged.connect(self.limitation)
+        # self.email2.textChanged.connect(self.limitation)
+        # self.email1.textChanged.connect(self.limitation)
+        #
+        # self.other_title.textChanged.connect(self.limitation)
+        # self.market_group.textChanged.connect(self.limitation)
+        # self.phone2.textChanged.connect(self.limitation)
+        # self.phone1.textChanged.connect(self.limitation)
+        # self.fax2.textChanged.connect(self.limitation)
+        # self.fax1.textChanged.connect(self.limitation)
+        # self.phone2.textChanged.connect(self.limitation)
+        # self.phone1.textChanged.connect(self.limitation)
+        # self.customer_id.textChanged.connect(self.limitation)
+        # self.batch.textChanged.connect(self.limitation)
+        # self.notes.textChanged.connect(self.limitation)
+        # self.full_name.textChanged.connect(self.limitation)
+
+    @QtCore.pyqtSlot()
+    def find(self):
+        print(self.lookup.text())
+        self.the_signal2.emit(self.lookup.text())
+
+    def get_full_name(self):
+        self.full_name.setText((self.first_name.text().strip() + ' ' + self.last_name.text().strip()).strip())
+
+    def limitation(self):
+        try:
+            if len(self.addr3.text()) > 30:
+                self.input_alert(1,'Address 3')
+                self.addr3.setText(self.addr3.text()[:-1])
+            if len(self.addr2.text()) > 30:
+                self.input_alert(1, 'Address 2')
+                self.addr2.setText(self.addr2.text()[:-1])
+            if len(self.addr1.text()) > 30:
+                self.input_alert(1, 'Address 1')
+                self.addr1.setText(self.addr1.text()[:-1])
+
+            if len(self.first_name.text()) > 17:
+                self.input_alert(1, 'First Name')
+                self.first_name.setText(self.first_name.text()[:-1])
+            if len(self.last_name.text()) > 17:
+                self.input_alert(1, 'Last Name')
+                self.last_name.setText(self.last_name.text()[:-1])
+            if len(self.company_name.text()) > 30:
+                self.input_alert(1, 'Company Name')
+                self.company_name.setText(self.company_name.text()[:-1])
+
+            if len(self.fax1.text()) > 10:
+                self.input_alert(1, 'Fax Prefix')
+                self.fax1.setText(self.fax1.text()[:-1])
+            if len(self.fax2.text()) > 20:
+                self.input_alert(1, 'Fax Number')
+                self.fax2.setText(self.fax2.text()[:-1])
+            if len(self.phone2.text()) > 20:
+                self.input_alert(1, 'Phone Number')
+                self.phone2.setText(self.phone2.text()[:-1])
+
+            if len(self.phone1.text()) > 10:
+                self.input_alert(1, 'Phone Prefix')
+                self.phone1.setText(self.phone1.text()[:-1])
+            if len(self.other_title.text()) > 20:
+                self.input_alert(1, 'Title')
+                self.other_title.setText(self.other_title.text()[:-1])
+
+            if len(self.city.text()) > 20:
+                self.input_alert(1, 'City')
+                self.city.setText(self.city.text()[:-1])
+            if len(self.country.text()) > 20:
+                self.input_alert(1, 'Country')
+                self.country.setText(self.country.text()[:-1])
+            if len(self.postcode.text()) > 10:
+                self.input_alert(1, 'Postcode')
+                self.postcode.setText(self.postcode.text()[:-1])
+            if len(self.notes.toPlainText()) > 500:
+                self.input_alert(1, 'Notes')
+                self.notes.setText(self.notes.toPlainText()[:-1])
+
+            if len(self.email1.text()) > 50:
+                self.input_alert(1,'Email 1')
+                self.email1.setText(self.email1.text()[:-1])
+            if len(self.email2.text()) > 50:
+                self.input_alert(1, 'Email 2')
+                self.email2.setText(self.email2.text()[:-1])
+            if len(self.email3.text()) > 50:
+                self.input_alert(1, 'Email 3')
+                self.email3.setText(self.email3.text()[:-1])
+
+
+            if len(self.full_name.text()) > 34:
+                self.input_alert(1, 'Full Name')
+                self.full_name.setText(self.full_name.text()[:-1])
+            if len(self.batch.text()) > 50:
+                self.input_alert(1, 'Batch')
+                self.batch.setText(self.batch.text()[:-1])
+            if len(self.customer_id.text()) > 50:
+                self.input_alert(1, 'Customer ID')
+                self.customer_id.setText(self.customer_id.text()[:-1])
+            if len(self.market_group.text()) > 50:
+                self.input_alert(1, 'Market Group')
+                self.market_group.setText(self.market_group.text()[:-1])
+        except Exception as err:
+            print(err)
+            logger.info(err, exc_info=True)
+
+    def input_alert(self, errno, item):
+        if errno == 1:
+            msg = QMessageBox()
+            msg.setWindowTitle("{} too long".format(item))
+            msg.setText('{} you entered is too long'.format(item))
+            x = msg.exec_()
 
     def load_data(self, customer_id):
         engine = create_engine(db_link, echo=False)
@@ -496,9 +631,40 @@ class Ui_Dialog(QtWidgets.QDialog):
             self.postcode.setText(cus.post_code)
             self.market_group.setText(cus.market_group)
             self.notes.setText(cus.notes)
+            self.batch.setText(cus.batch)
         except Exception as err:
             logger.info(err, exc_info=True)
             print(err)
+
+        self.first_name.textChanged.connect(self.get_full_name)
+        self.last_name.textChanged.connect(self.get_full_name)
+
+        # input limitation
+        self.addr3.textChanged.connect(self.limitation)
+        self.addr2.textChanged.connect(self.limitation)
+        self.addr1.textChanged.connect(self.limitation)
+        self.last_name.textChanged.connect(self.limitation)
+        self.first_name.textChanged.connect(self.limitation)
+        self.company_name.textChanged.connect(self.limitation)
+        self.country.textChanged.connect(self.limitation)
+        self.city.textChanged.connect(self.limitation)
+        # self.customer_id.textChanged.connect(self.limitation)
+        self.email3.textChanged.connect(self.limitation)
+        self.email2.textChanged.connect(self.limitation)
+        self.email1.textChanged.connect(self.limitation)
+
+        self.other_title.textChanged.connect(self.limitation)
+        self.market_group.textChanged.connect(self.limitation)
+        self.phone2.textChanged.connect(self.limitation)
+        self.phone1.textChanged.connect(self.limitation)
+        self.fax2.textChanged.connect(self.limitation)
+        self.fax1.textChanged.connect(self.limitation)
+        self.phone2.textChanged.connect(self.limitation)
+        self.phone1.textChanged.connect(self.limitation)
+        self.customer_id.textChanged.connect(self.limitation)
+        self.batch.textChanged.connect(self.limitation)
+        self.notes.textChanged.connect(self.limitation)
+        self.full_name.textChanged.connect(self.limitation)
 
     def title_selected(self, text):
         self.selected_title = text
@@ -538,6 +704,7 @@ class Ui_Dialog(QtWidgets.QDialog):
 
     def save(self):
         id = self.customer_id.text().strip()
+        batch = self.batch.text().strip()
         company_name = self.company_name.text().strip()
         contact_name = self.full_name.text().strip()
         title = self.title_box.currentText().strip()
@@ -575,7 +742,7 @@ class Ui_Dialog(QtWidgets.QDialog):
                 else:
                     # create_date = session.query(Customer).filter_by(id=id).first().create_date
                     # session.query(Customer).filter_by(id=id).first().delete(synchronize_session=False)
-                    cus = Customer(id=id, company_name=company_name, contact_name=contact_name, title=title, other_title=other_title,
+                    cus = Customer(id=id,batch=batch,company_name=company_name, contact_name=contact_name, title=title, other_title=other_title,
                              first_name=first_name, last_name=last_name, market_group=market_group, address_one=address_one,
                              address_two=address_two, address_three=address_three, phone_number_prefix=phone_number_prefix,
                              phone_number=phone_number, fax_number_prefix=fax_number_prefix, fax_number=fax_number, city=city,
@@ -599,6 +766,7 @@ class Ui_Dialog(QtWidgets.QDialog):
                     cus = session.query(Customer).filter_by(id=id).first()
                     cus.company_name = company_name
                     cus.contact_name = contact_name
+                    cus.batch = batch
                     cus.title, cus.other_title, cus.first_name, cus.last_name = title,other_title,first_name,last_name
                     cus.market_group, cus.address_one, cus.address_two, cus.address_three = market_group, address_one, address_two, address_three
                     cus.phone_number_prefix, cus.phone_number, cus.fax_number_prefix, cus.fax_number = phone_number_prefix,phone_number,fax_number_prefix,fax_number
@@ -612,7 +780,7 @@ class Ui_Dialog(QtWidgets.QDialog):
                     x = msg.exec_()
                 else:
                     print('saving:' + title)
-                    cus = Customer(id=id, company_name=company_name, contact_name=contact_name, title=title,
+                    cus = Customer(id=id, company_name=company_name, contact_name=contact_name, title=title,batch=batch,
                                    other_title=other_title,
                                    first_name=first_name, last_name=last_name, market_group=market_group,
                                    address_one=address_one,

@@ -317,7 +317,7 @@ class Ui_Dialog(QtCore.QObject):
 
     def retranslateUi(self, Dialog):
         _translate = QtCore.QCoreApplication.translate
-        Dialog.setWindowTitle(_translate("Dialog", "Dialog"))
+        Dialog.setWindowTitle(_translate("Dialog", "Print"))
         self.label.setText(_translate("Dialog", "Printer:"))
         # self.printer_box.setItemText(0, _translate("Dialog", "Printer 1"))
         # self.printer_box.setItemText(1, _translate("Dialog", "Printer 2"))
