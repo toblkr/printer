@@ -78,6 +78,15 @@ class Ui_Dialog(QtCore.QObject):
         self.tag_size_box.addItem("")
         self.tag_size_box.addItem("")
         self.horizontalLayout.addWidget(self.tag_size_box)
+
+        self.number_tag = QtWidgets.QLabel(self.frame_5)
+        self.number_tag.setMinimumSize(QtCore.QSize(60, 0))
+        self.number_tag.setObjectName("number_tag")
+        self.horizontalLayout.addWidget(self.number_tag)
+        self.number_of_copy = QtWidgets.QSpinBox(self.frame_5)
+        self.number_of_copy.setObjectName("number_of_copy")
+        self.horizontalLayout.addWidget(self.number_of_copy)
+
         self.gridLayout_2.addLayout(self.horizontalLayout, 0, 1, 1, 1)
         self.gridLayout.addLayout(self.gridLayout_2, 0, 0, 1, 1)
         self.line = QtWidgets.QFrame(self.frame_5)
@@ -347,6 +356,7 @@ class Ui_Dialog(QtCore.QObject):
         self.next_button.setText(_translate("Dialog", "Next"))
         self.print_button.setText(_translate("Dialog", "Print"))
         self.print_all_button.setText(_translate("Dialog", "Print All"))
+        self.number_tag.setText(_translate("Dialog", "Number of Copy:"))
 
         self.print_button.clicked.connect(self.print_cust)
 
@@ -360,6 +370,7 @@ class Ui_Dialog(QtCore.QObject):
     def init_data(self):
         print("init print page")
         # print(self.customer_list)
+        self.number_of_copy.setValue(1)
 
         printer_list = win32print.EnumPrinters(2)
         # print(printer_list[0][2])
@@ -851,107 +862,115 @@ class Ui_Dialog(QtCore.QObject):
 
     def print_cust(self):
         # remove printed customer
-        print('print_cust')
+        # print('print_cust')
+        copy = self.number_of_copy.value()
         self.prev_button.setDisabled(True)
         self.next_button.setDisabled(True)
-        try:
-            if self.tag_size_box.currentText() == '100*80':
-                font_width = self.font_100
-                X = self.x_100
-                Y = self.y_100
-                Y_distance = self.y_100_distance
-            elif self.tag_size_box.currentText() == '80*60':
-                font_width = self.font_80
-                X = self.x_80
-                Y = self.y_80
-                Y_distance = self.y_80_distance
+        while copy != 0:
+            try:
+                if self.tag_size_box.currentText() == '100*80':
+                    font_width = self.font_100
+                    X = self.x_100
+                    Y = self.y_100
+                    Y_distance = self.y_100_distance
+                elif self.tag_size_box.currentText() == '80*60':
+                    font_width = self.font_80
+                    X = self.x_80
+                    Y = self.y_80
+                    Y_distance = self.y_80_distance
 
-            name = self.to_print[self.current_index]['name']
-            line1 = ('Name:        ' + name)
-            company = self.to_print[self.current_index]['company']
-            line2 = ('Company:  ' + company)
+                name = self.to_print[self.current_index]['name']
+                line1 = ('Name:        ' + name)
+                company = self.to_print[self.current_index]['company']
+                line2 = ('Company:  ' + company)
 
-            address1 = self.to_print[self.current_index]['address1']
-            line3 = ('Address:    ' + address1)
-            address2 = self.to_print[self.current_index]['address2']
-            line4 = ('                  ' + address2)
-            address3 = self.to_print[self.current_index]['address3']
-            line5 = ('                  ' + address3)
+                address1 = self.to_print[self.current_index]['address1']
+                line3 = ('Address:    ' + address1)
+                address2 = self.to_print[self.current_index]['address2']
+                line4 = ('                  ' + address2)
+                address3 = self.to_print[self.current_index]['address3']
+                line5 = ('                  ' + address3)
 
-            phone = self.to_print[self.current_index]['phone']
-            line6 = ('Phone:       ' + phone)
+                phone = self.to_print[self.current_index]['phone']
+                line6 = ('Phone:       ' + phone)
 
-            city = self.to_print[self.current_index]['city']
-            line7 = ('City:           ' + city)
+                city = self.to_print[self.current_index]['city']
+                line7 = ('City:           ' + city)
 
-            country = self.to_print[self.current_index]['country']
-            postcode = self.to_print[self.current_index]['postcode']
-            line8 = (
-                    'Country:    ' + country + (20 - len(postcode) - len(country)) * ' ' + ' Postcode: ' + postcode)
-            multi_line_string = [line1, line2, line3, line4, line5, line6, line7, line8]
-            fontdata = {'name': 'Arial', 'weight': win32con.FW_NORMAL, 'height': 60, 'width': font_width}
+                country = self.to_print[self.current_index]['country']
+                postcode = self.to_print[self.current_index]['postcode']
+                line8 = (
+                        'Country:    ' + country + (20 - len(postcode) - len(country)) * ' ' + ' Postcode: ' + postcode)
+                multi_line_string = [line1, line2, line3, line4, line5, line6, line7, line8]
+                fontdata = {'name': 'Arial', 'weight': win32con.FW_NORMAL, 'height': 60, 'width': font_width}
 
-        except Exception as err:
-            print(err)
-            logger.info(err, exc_info=True)
+            except Exception as err:
+                print(err)
+                logger.info(err, exc_info=True)
 
-        try:
-            print(self.next_button.isEnabled())
-            hDC = win32ui.CreateDC()
-            hDC.CreatePrinterDC(self.printer_box.currentText())
-            font = win32ui.CreateFont(fontdata);
-            hDC.SelectObject(font)
-            hDC.StartDoc('alex')
-            hDC.StartPage()
-            for line in multi_line_string:
-                hDC.TextOut(X, Y, line)
-                # 行距, 唯一影响行数
-                Y += Y_distance
+            try:
+                print(self.next_button.isEnabled())
+                hDC = win32ui.CreateDC()
+                hDC.CreatePrinterDC(self.printer_box.currentText())
+                font = win32ui.CreateFont(fontdata);
+                hDC.SelectObject(font)
+                hDC.StartDoc('alex')
+                hDC.StartPage()
+                for line in multi_line_string:
+                    hDC.TextOut(X, Y, line)
+                    # 行距, 唯一影响行数
+                    Y += Y_distance
 
-            hDC.EndPage()
-            hDC.EndDoc()
+                hDC.EndPage()
+                hDC.EndDoc()
 
-            # base on current index
-            # print(self.current_index)
-            # print(self.to_print)
-            print(self.next_button.isEnabled())
-            if self.current_index != 0:
-                self.prev_button.setDisabled(False)
-            if self.current_index != len(self.to_print)-1:
-                self.next_button.setDisabled(False)
+                # base on current index
+                # print(self.current_index)
+                # print(self.to_print)
+                # print(self.next_button.isEnabled())
+                if self.current_index != 0:
+                    self.prev_button.setDisabled(False)
+                if self.current_index != len(self.to_print)-1:
+                    self.next_button.setDisabled(False)
 
-            # if self.current_index == 0 and len(self.to_print) == 1:
-            #     self.prev_button.setDisabled(True)
-            #     self.next_button.setDisabled(True)
-            # elif len(self.to_print) > 1 and self.current_index == len(self.to_print) - 1 :
-            #     self.current_index -= 1
-            #     self.to_print.pop(-1)
-            #     self.show_cust(self.current_index)
-            #     self.prev_button.setDisabled(False)
-            #     if self.current_index == 0:
-            #         self.prev_button.setDisabled(True)
-            # else:
-            #     self.to_print.pop(self.current_index)
-            #     # self.current_index += 1
-            #     self.show_cust(self.current_index)
-            #     if self.current_index != len(self.to_print) - 1:
-            #
+                # if self.current_index == 0 and len(self.to_print) == 1:
+                #     self.prev_button.setDisabled(True)
+                #     self.next_button.setDisabled(True)
+                # elif len(self.to_print) > 1 and self.current_index == len(self.to_print) - 1 :
+                #     self.current_index -= 1
+                #     self.to_print.pop(-1)
+                #     self.show_cust(self.current_index)
+                #     self.prev_button.setDisabled(False)
+                #     if self.current_index == 0:
+                #         self.prev_button.setDisabled(True)
+                # else:
+                #     self.to_print.pop(self.current_index)
+                #     # self.current_index += 1
+                #     self.show_cust(self.current_index)
+                #     if self.current_index != len(self.to_print) - 1:
+                #
 
-            # print(self.current_index)
-            # print(self.to_print)
-        except Exception as err:
-            print(err)
-            logger.info(err, exc_info=True)
+                # print(self.current_index)
+                # print(self.to_print)
+            except Exception as err:
+                print(err)
+                logger.info(err, exc_info=True)
+            copy -= 1
 
 
     def print_cust_all(self):
+
         self.prev_button.setDisabled(True)
         self.next_button.setDisabled(True)
         self.current_index = 0
         self.show_cust(self.current_index)
         for i in range(len(self.to_print)):
-            self.show_cust(self.current_index)
+            # self.show_cust(self.current_index)
+            copy = self.number_of_copy.value()
+            # while copy != 0:
+                # print(copy)
             self.print_cust()
+                # copy -= 1
             if self.current_index != len(self.to_print)-1:
                 self.current_index += 1
         self.prev_button.setDisabled(False)
@@ -959,65 +978,68 @@ class Ui_Dialog(QtCore.QObject):
 
 
     def print_sender(self):
-        try:
-            print('ready to print')
-            if self.tag_size_box.currentText() == '100*80':
-                font_width = self.font_100
-                X = self.x_100
-                Y = self.y_100
-                Y_distance = self.y_100_distance
-            elif self.tag_size_box.currentText() == '80*60':
-                font_width = self.font_100
-                X = self.x_80
-                Y = self.y_80
-                Y_distance = self.y_80_distance
+        copy = self.number_of_copy.value()
+        while copy!=0:
+            try:
+                print('ready to print')
+                if self.tag_size_box.currentText() == '100*80':
+                    font_width = self.font_100
+                    X = self.x_100
+                    Y = self.y_100
+                    Y_distance = self.y_100_distance
+                elif self.tag_size_box.currentText() == '80*60':
+                    font_width = self.font_100
+                    X = self.x_80
+                    Y = self.y_80
+                    Y_distance = self.y_80_distance
 
-            name = self.current_sender['sender_name']
-            line1 = ('Name:        ' + name)
-            company = self.current_sender['sender_company']
-            line2 = ('Company:  ' + company)
+                name = self.current_sender['sender_name']
+                line1 = ('Name:        ' + name)
+                company = self.current_sender['sender_company']
+                line2 = ('Company:  ' + company)
 
-            address1 = self.current_sender['sender_addr1']
-            line3 = ('Address:    ' + address1)
-            address2 = self.current_sender['sender_addr2']
-            line4 = ('                  ' + address2)
-            address3 = self.current_sender['sender_addr3']
-            line5 = ('                  ' + address3)
+                address1 = self.current_sender['sender_addr1']
+                line3 = ('Address:    ' + address1)
+                address2 = self.current_sender['sender_addr2']
+                line4 = ('                  ' + address2)
+                address3 = self.current_sender['sender_addr3']
+                line5 = ('                  ' + address3)
 
-            phone = self.current_sender['sender_phone']
-            line6 = ('Phone:       ' + phone)
+                phone = self.current_sender['sender_phone']
+                line6 = ('Phone:       ' + phone)
 
-            city = self.current_sender['sender_city']
-            line7 = ('City:           ' + city)
+                city = self.current_sender['sender_city']
+                line7 = ('City:           ' + city)
 
-            country = self.current_sender['sender_country']
-            postcode = self.current_sender['sender_postcode']
-            line8 = (
-                'Country:    ' + country + (20 - len(postcode) - len(country)) * ' ' + ' Postcode: ' + postcode)
-            multi_line_string = [line1,line2,line3,line4,line5,line6,line7,line8]
+                country = self.current_sender['sender_country']
+                postcode = self.current_sender['sender_postcode']
+                line8 = (
+                    'Country:    ' + country + (20 - len(postcode) - len(country)) * ' ' + ' Postcode: ' + postcode)
+                multi_line_string = [line1,line2,line3,line4,line5,line6,line7,line8]
 
-            fontdata = {'name': 'Arial', 'weight': win32con.FW_NORMAL, 'height': 60, 'width': font_width}
-        except Exception as err:
-            logger.info(err, exc_info=True)
-            print(err)
-        print('before print')
-        try:
-            hDC = win32ui.CreateDC()
-            hDC.CreatePrinterDC(self.printer_box.currentText())
-            font = win32ui.CreateFont(fontdata);
-            hDC.SelectObject(font)
-            hDC.StartDoc('alex')
-            hDC.StartPage()
-            for line in multi_line_string:
-                hDC.TextOut(X, Y, line)
-                # 行距, 唯一影响行数
-                Y += Y_distance
+                fontdata = {'name': 'Arial', 'weight': win32con.FW_NORMAL, 'height': 60, 'width': font_width}
+            except Exception as err:
+                logger.info(err, exc_info=True)
+                print(err)
+            print('before print')
+            try:
+                hDC = win32ui.CreateDC()
+                hDC.CreatePrinterDC(self.printer_box.currentText())
+                font = win32ui.CreateFont(fontdata);
+                hDC.SelectObject(font)
+                hDC.StartDoc('alex')
+                hDC.StartPage()
+                for line in multi_line_string:
+                    hDC.TextOut(X, Y, line)
+                    # 行距, 唯一影响行数
+                    Y += Y_distance
 
-            hDC.EndPage()
-            hDC.EndDoc()
-        except Exception as err:
-            logger.info(err, exc_info=True)
-            print(err)
+                hDC.EndPage()
+                hDC.EndDoc()
+            except Exception as err:
+                logger.info(err, exc_info=True)
+                print(err)
+            copy -= 1
 
 
     def changeEvent(self,e):
