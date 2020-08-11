@@ -887,9 +887,9 @@ class Ui_Dialog(QtCore.QObject):
                 address1 = self.to_print[self.current_index]['address1']
                 line3 = ('Address:    ' + address1)
                 address2 = self.to_print[self.current_index]['address2']
-                line4 = ('                  ' + address2)
+                line4 = ('                   ' + address2)
                 address3 = self.to_print[self.current_index]['address3']
-                line5 = ('                  ' + address3)
+                line5 = ('                   ' + address3)
 
                 phone = self.to_print[self.current_index]['phone']
                 line6 = ('Phone:       ' + phone)
@@ -902,7 +902,10 @@ class Ui_Dialog(QtCore.QObject):
                 line8 = (
                         'Country:    ' + country + (20 - len(postcode) - len(country)) * ' ' + ' Postcode: ' + postcode)
                 multi_line_string = [line1, line2, line3, line4, line5, line6, line7, line8]
-                fontdata = {'name': 'Arial', 'weight': win32con.FW_NORMAL, 'height': 60, 'width': font_width}
+                fontdata = {
+                    'name': 'Arial',
+                    # 'weight': win32con.FW_NORMAL,
+                    'height': 60, 'width': font_width}
 
             except Exception as err:
                 print(err)
@@ -911,8 +914,9 @@ class Ui_Dialog(QtCore.QObject):
             try:
                 print(self.next_button.isEnabled())
                 hDC = win32ui.CreateDC()
+                # hDC.SetMapMode(win32con.MM_TWIPS)
                 hDC.CreatePrinterDC(self.printer_box.currentText())
-                font = win32ui.CreateFont(fontdata);
+                font = win32ui.CreateFont(fontdata)
                 hDC.SelectObject(font)
                 hDC.StartDoc('alex')
                 hDC.StartPage()
@@ -988,7 +992,7 @@ class Ui_Dialog(QtCore.QObject):
                     Y = self.y_100
                     Y_distance = self.y_100_distance
                 elif self.tag_size_box.currentText() == '80*60':
-                    font_width = self.font_100
+                    font_width = self.font_80
                     X = self.x_80
                     Y = self.y_80
                     Y_distance = self.y_80_distance
@@ -1001,9 +1005,9 @@ class Ui_Dialog(QtCore.QObject):
                 address1 = self.current_sender['sender_addr1']
                 line3 = ('Address:    ' + address1)
                 address2 = self.current_sender['sender_addr2']
-                line4 = ('                  ' + address2)
+                line4 = ('                   ' + address2)
                 address3 = self.current_sender['sender_addr3']
-                line5 = ('                  ' + address3)
+                line5 = ('                   ' + address3)
 
                 phone = self.current_sender['sender_phone']
                 line6 = ('Phone:       ' + phone)
@@ -1027,7 +1031,7 @@ class Ui_Dialog(QtCore.QObject):
                 hDC.CreatePrinterDC(self.printer_box.currentText())
                 font = win32ui.CreateFont(fontdata);
                 hDC.SelectObject(font)
-                hDC.StartDoc('alex')
+                hDC.StartDoc('gprinter')
                 hDC.StartPage()
                 for line in multi_line_string:
                     hDC.TextOut(X, Y, line)
