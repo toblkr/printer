@@ -9,7 +9,7 @@
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import QMessageBox
-from DB import Customer, Sender, db_link
+from DB import Customer, Sender, db_link, PrintSize
 from sqlalchemy import create_engine, MetaData, Table, func
 from sqlalchemy.orm import sessionmaker
 
@@ -78,6 +78,22 @@ class Ui_Dialog(QtCore.QObject):
         self.tag_size_box.addItem("")
         self.tag_size_box.addItem("")
         self.horizontalLayout.addWidget(self.tag_size_box)
+
+        self.font_tag = QtWidgets.QLabel(self.frame_5)
+        self.font_tag.setMinimumSize(QtCore.QSize(60, 0))
+        self.font_tag.setObjectName("font_tag")
+        self.horizontalLayout.addWidget(self.font_tag)
+        self.font_box = QtWidgets.QSpinBox(self.frame_5)
+        self.font_box.setObjectName("font_box")
+        self.horizontalLayout.addWidget(self.font_box)
+
+        self.line_space = QtWidgets.QLabel(self.frame_5)
+        self.line_space.setMinimumSize(QtCore.QSize(60, 0))
+        self.line_space.setObjectName("line_space")
+        self.horizontalLayout.addWidget(self.line_space)
+        self.line_box = QtWidgets.QSpinBox(self.frame_5)
+        self.line_box.setObjectName("line_box")
+        self.horizontalLayout.addWidget(self.line_box)
 
         self.number_tag = QtWidgets.QLabel(self.frame_5)
         self.number_tag.setMinimumSize(QtCore.QSize(60, 0))
@@ -357,6 +373,8 @@ class Ui_Dialog(QtCore.QObject):
         self.print_button.setText(_translate("Dialog", "Print"))
         self.print_all_button.setText(_translate("Dialog", "Print All"))
         self.number_tag.setText(_translate("Dialog", "Number of Copy:"))
+        self.font_tag.setText(_translate("Dialog", "Font:"))
+        self.line_space.setText(_translate("Dialog", "Line Space:"))
 
         self.print_button.clicked.connect(self.print_cust)
 
@@ -372,6 +390,23 @@ class Ui_Dialog(QtCore.QObject):
         # print(self.customer_list)
         self.number_of_copy.setValue(1)
 
+        engine = create_engine(db_link, echo=False)
+        metadata = MetaData(engine)
+        Session = sessionmaker(bind=engine)
+        session = Session()
+
+        # get default size
+        last_two = session.query(PrintSize).filter(PrintSize.last_use=='1')
+        default_100 = last_two.filter(PrintSize.tag_size=='10').first()
+        default_80 = last_two.filter(PrintSize.tag_size == '8').first()
+        self.y_80_distance = default_80.line_space
+        self.y_100_distance = default_100.line_space
+        self.font_80 = default_80.font_size
+        self.font_100 = default_100.font_size
+
+        self.line_box.setValue(self.y_100_distance)
+        self.font_box.setValue(self.font_100)
+
         printer_list = win32print.EnumPrinters(2)
         # print(printer_list[0][2])
         if len(printer_list) > 0:
@@ -383,10 +418,7 @@ class Ui_Dialog(QtCore.QObject):
             msg.setText('Please connect a printer to your PC and open the printing page again.')
             x = msg.exec_()
 
-        engine = create_engine(db_link, echo=False)
-        metadata = MetaData(engine)
-        Session = sessionmaker(bind=engine)
-        session = Session()
+
 
         for i in range(len(self.customer_list)):
             current_cust = {}
@@ -400,6 +432,7 @@ class Ui_Dialog(QtCore.QObject):
             current_cust['address1'] = cust.address_one.strip(',')
             current_cust['address2'] = cust.address_two.strip(',')
             current_cust['address3'] = cust.address_three.strip(',')
+            current_cust['notes'] = cust.notes.strip(',')
             self.to_print.append(current_cust)
 
         senders = session.query(Sender).all()
@@ -571,11 +604,12 @@ class Ui_Dialog(QtCore.QObject):
         width = self.graphicsView.width()
         height = self.graphicsView.height()
         scene = QtWidgets.QGraphicsScene()
+        current = 0
         if self.tag_size_box.currentText() == '100*80':
             # print(scene.height())
             try:
                 rect_item = QtWidgets.QGraphicsRectItem(QtCore.QRectF(0.1*width, 0, width*0.8, 0.64*width))
-                distance = width*0.64/8
+                distance = width*0.64/9
                 # scene.addText("Hello, world!")
                 font1 = QtGui.QFont()
                 font2 = QtGui.QFont()
@@ -589,46 +623,58 @@ class Ui_Dialog(QtCore.QObject):
                 line1.setFont(font1)
 
                 company = self.current_sender['sender_company']
-                line2 = QtWidgets.QGraphicsTextItem('Company: ' + company)# + (31-len(company))*' ' )
-                scene.addItem(line2)
-                line2.setPos(0.11 * width, distance)
-                line2.setFont(font1)
+                if (len(company.strip()) != 0):
+                    line2 = QtWidgets.QGraphicsTextItem('Company: ' + company)# + (31-len(company))*' ' )
+                    scene.addItem(line2)
+                    current += distance
+                    line2.setPos(0.11 * width, current)
+                    line2.setFont(font1)
 
                 address1 = self.current_sender['sender_addr1']
                 line3 = QtWidgets.QGraphicsTextItem('Address: ' + address1)# + (31- len(address1))*' ')
                 scene.addItem(line3)
-                line3.setPos(0.11 * width, distance*2)
+                current += distance
+                line3.setPos(0.11 * width, current)
                 line3.setFont(font1)
 
                 address2 = self.current_sender['sender_addr2']
-                line4 = QtWidgets.QGraphicsTextItem('         ' + address2)# + (31- len(address2))*' ' )
-                scene.addItem(line4)
-                line4.setPos(0.11 * width, distance*3)
-                line4.setFont(font1)
+                if (len(address2.strip()) != 0):
+                    line4 = QtWidgets.QGraphicsTextItem('         ' + address2)# + (31- len(address2))*' ' )
+                    scene.addItem(line4)
+                    current += distance
+                    line4.setPos(0.11 * width, current)
+                    line4.setFont(font1)
 
                 address3 = self.current_sender['sender_addr3']
-                line5 = QtWidgets.QGraphicsTextItem('         ' + address3)# + (31- len(address3))*' ' )
-                scene.addItem(line5)
-                line5.setPos(0.11 * width, distance*4)
-                line5.setFont(font1)
+                if (len(address3.strip()) != 0):
+                    line5 = QtWidgets.QGraphicsTextItem('         ' + address3)# + (31- len(address3))*' ' )
+                    scene.addItem(line5)
+                    current += distance
+                    line5.setPos(0.11 * width, current)
+                    line5.setFont(font1)
 
                 phone = self.current_sender['sender_phone']
-                line6 = QtWidgets.QGraphicsTextItem('Phone:   ' + phone)# + (31-len(phone))*' ')
-                scene.addItem(line6)
-                line6.setPos(0.11 * width, distance*5)
-                line6.setFont(font1)
+                if (len(phone.strip()) != 0):
+                    line6 = QtWidgets.QGraphicsTextItem('Phone:   ' + phone)# + (31-len(phone))*' ')
+                    scene.addItem(line6)
+                    current += distance
+                    line6.setPos(0.11 * width, current)
+                    line6.setFont(font1)
 
                 city = self.current_sender['sender_city']
-                line7 = QtWidgets.QGraphicsTextItem('City:    ' + city)# + (31-len(city))*' ' )
-                scene.addItem(line7)
-                line7.setPos(0.11 * width, distance*6)
-                line7.setFont(font1)
+                if (len(city.strip()) != 0):
+                    line7 = QtWidgets.QGraphicsTextItem('City:    ' + city)# + (31-len(city))*' ' )
+                    scene.addItem(line7)
+                    current += distance
+                    line7.setPos(0.11 * width, current)
+                    line7.setFont(font1)
 
                 country = self.current_sender['sender_country']
                 postcode = self.current_sender['sender_postcode']
                 line8 = QtWidgets.QGraphicsTextItem('Country: ' + country + (20-len(postcode)-len(country))*' ' + ' Postcode: ' + postcode)
                 scene.addItem(line8)
-                line8.setPos(0.11 * width, distance * 7)
+                current += distance
+                line8.setPos(0.11 * width, current)
                 line8.setFont(font1)
 
 
@@ -644,7 +690,7 @@ class Ui_Dialog(QtCore.QObject):
         elif self.tag_size_box.currentText() == '80*60':
             rect_item = QtWidgets.QGraphicsRectItem(QtCore.QRectF(0.18 * width, 0, width * 0.64, 0.75*0.64*width))
             scene.addItem(rect_item)
-            distance = width * 0.64 * 0.75 / 8
+            distance = width * 0.64 * 0.75 / 9
             # scene.addText("Hello, world!")
             font1 = QtGui.QFont()
             font2 = QtGui.QFont()
@@ -658,47 +704,59 @@ class Ui_Dialog(QtCore.QObject):
             line1.setFont(font1)
 
             company = self.current_sender['sender_company']
-            line2 = QtWidgets.QGraphicsTextItem('Company: ' + company)# + (31-len(company))*' ' )
-            scene.addItem(line2)
-            line2.setPos(0.19 * width, distance)
-            line2.setFont(font1)
+            if (len(company.strip()) != 0):
+                line2 = QtWidgets.QGraphicsTextItem('Company: ' + company)# + (31-len(company))*' ' )
+                scene.addItem(line2)
+                current += distance
+                line2.setPos(0.19 * width, current)
+                line2.setFont(font1)
 
             address1 = self.current_sender['sender_addr1']
             line3 = QtWidgets.QGraphicsTextItem('Address: '+ address1)# + (31- len(address1))*' ' )
             scene.addItem(line3)
-            line3.setPos(0.19 * width, distance * 2)
+            current += distance
+            line3.setPos(0.19 * width, current)
             line3.setFont(font1)
 
             address2 = self.current_sender['sender_addr2']
-            line4 = QtWidgets.QGraphicsTextItem('         ' + address2)# + (31- len(address2))*' ')
-            scene.addItem(line4)
-            line4.setPos(0.19 * width, distance * 3)
-            line4.setFont(font1)
+            if (len(address2.strip()) != 0):
+                line4 = QtWidgets.QGraphicsTextItem('         ' + address2)# + (31- len(address2))*' ')
+                scene.addItem(line4)
+                current += distance
+                line4.setPos(0.19 * width, current)
+                line4.setFont(font1)
 
             address3 = self.current_sender['sender_addr3']
-            line5 = QtWidgets.QGraphicsTextItem('         ' + address3)# + (31- len(address3))*' ')
-            scene.addItem(line5)
-            line5.setPos(0.19 * width, distance * 4)
-            line5.setFont(font1)
+            if (len(address3.strip()) != 0):
+                line5 = QtWidgets.QGraphicsTextItem('         ' + address3)# + (31- len(address3))*' ')
+                scene.addItem(line5)
+                current += distance
+                line5.setPos(0.19 * width, current)
+                line5.setFont(font1)
 
             phone = self.current_sender['sender_phone']
-            line6 = QtWidgets.QGraphicsTextItem('Phone:   ' + phone)# + (31-len(phone))*' ')
-            scene.addItem(line6)
-            line6.setPos(0.19 * width, distance * 5)
-            line6.setFont(font1)
+            if (len(phone.strip()) != 0):
+                line6 = QtWidgets.QGraphicsTextItem('Phone:   ' + phone)# + (31-len(phone))*' ')
+                scene.addItem(line6)
+                current += distance
+                line6.setPos(0.19 * width, current)
+                line6.setFont(font1)
 
             city = self.current_sender['sender_city']
-            line7 = QtWidgets.QGraphicsTextItem('City:    ' + city)# + (31-len(city))*' ')
-            scene.addItem(line7)
-            line7.setPos(0.19 * width, distance * 6)
-            line7.setFont(font1)
+            if (len(city.strip()) != 0):
+                line7 = QtWidgets.QGraphicsTextItem('City:    ' + city)# + (31-len(city))*' ')
+                scene.addItem(line7)
+                current += distance
+                line7.setPos(0.19 * width, current)
+                line7.setFont(font1)
 
             country = self.current_sender['sender_country']
             postcode = self.current_sender['sender_postcode']
             line8 = QtWidgets.QGraphicsTextItem(
                 'Country: ' + country + (15 - len(postcode) - len(country)) * ' ' + ' Postcode: ' + postcode)
             scene.addItem(line8)
-            line8.setPos(0.19 * width, distance * 7)
+            current += distance
+            line8.setPos(0.19 * width, current)
             line8.setFont(font1)
 
             self.graphicsView.setScene(scene)
@@ -711,12 +769,13 @@ class Ui_Dialog(QtCore.QObject):
             # print(scene.height())
             try:
                 rect_item = QtWidgets.QGraphicsRectItem(QtCore.QRectF(0.1 * width, 0, width * 0.8, 0.64 * width))
-                distance = width * 0.64 / 8
+                distance = width * 0.64 / 10
                 # scene.addText("Hello, world!")
                 font1 = QtGui.QFont()
 
                 font1.setPixelSize(width * 0.03685)
 
+                current = 0
 
                 name = self.to_print[index]['name']
                 line1 = QtWidgets.QGraphicsTextItem('Name:    ' + name)# + (31-len(name))*' ')
@@ -725,48 +784,81 @@ class Ui_Dialog(QtCore.QObject):
                 line1.setFont(font1)
 
                 company = self.to_print[index]['company']
-                line2 = QtWidgets.QGraphicsTextItem('Company: ' + company)# + (31-len(company))*' ')
-                scene.addItem(line2)
-                line2.setPos(0.11 * width, distance)
-                line2.setFont(font1)
+                if(len(company.strip())!=0):
+                    line2 = QtWidgets.QGraphicsTextItem('Company: ' + company)# + (31-len(company))*' ')
+                    scene.addItem(line2)
+                    current += distance
+                    line2.setPos(0.11 * width, current)
+                    line2.setFont(font1)
 
                 address1 = self.to_print[index]['address1']
+
                 line3 = QtWidgets.QGraphicsTextItem('Address: '+ address1)# + (31- len(address1))*' ' )
                 scene.addItem(line3)
-                line3.setPos(0.11 * width, distance * 2)
+                current += distance
+                line3.setPos(0.11 * width, current)
                 line3.setFont(font1)
 
                 address2 = self.to_print[index]['address2']
-                line4 = QtWidgets.QGraphicsTextItem('         ' + address2)# + (31- len(address2))*' ')
-                scene.addItem(line4)
-                line4.setPos(0.11 * width, distance * 3)
-                line4.setFont(font1)
+                if (len(address2.strip()) != 0):
+                    line4 = QtWidgets.QGraphicsTextItem('         ' + address2)# + (31- len(address2))*' ')
+                    scene.addItem(line4)
+                    current += distance
+                    line4.setPos(0.11 * width, current)
+                    line4.setFont(font1)
 
                 address3 = self.to_print[index]['address3']
-                line5 = QtWidgets.QGraphicsTextItem('         ' + address3)# + (31- len(address3))*' ')
-                scene.addItem(line5)
-                line5.setPos(0.11 * width, distance * 4)
-                line5.setFont(font1)
+                if (len(address3.strip()) != 0):
+                    line5 = QtWidgets.QGraphicsTextItem('         ' + address3)# + (31- len(address3))*' ')
+                    scene.addItem(line5)
+                    current += distance
+                    line5.setPos(0.11 * width, current)
+                    line5.setFont(font1)
 
                 phone = self.to_print[index]['phone']
-                line6 = QtWidgets.QGraphicsTextItem('Phone:   ' + phone)# + (31-len(phone))*' ')
-                scene.addItem(line6)
-                line6.setPos(0.11 * width, distance * 5)
-                line6.setFont(font1)
+                if (len(phone.strip()) != 0):
+                    line6 = QtWidgets.QGraphicsTextItem('Phone:   ' + phone)# + (31-len(phone))*' ')
+                    scene.addItem(line6)
+                    current += distance
+                    line6.setPos(0.11 * width, current)
+                    line6.setFont(font1)
 
                 city = self.to_print[index]['city']
-                line7 = QtWidgets.QGraphicsTextItem('City:    ' + city)# + (31-len(city))*' ')
-                scene.addItem(line7)
-                line7.setPos(0.11 * width, distance * 6)
-                line7.setFont(font1)
+                if (len(city.strip()) != 0):
+                    line7 = QtWidgets.QGraphicsTextItem('City:    ' + city)# + (31-len(city))*' ')
+                    scene.addItem(line7)
+                    current += distance
+                    line7.setPos(0.11 * width, current)
+                    line7.setFont(font1)
 
                 country = self.to_print[index]['country']
                 postcode = self.to_print[index]['postcode']
                 line8 = QtWidgets.QGraphicsTextItem(
                     'Country: ' + country + (15 - len(postcode) - len(country)) * ' ' + ' Postcode: ' + postcode)
                 scene.addItem(line8)
-                line8.setPos(0.11 * width, distance * 7)
+                current += distance
+                line8.setPos(0.11 * width, current)
                 line8.setFont(font1)
+
+                notes = self.to_print[index]['notes']
+                if (len(notes) > 30):
+                    line9 = QtWidgets.QGraphicsTextItem('Notes:   ' + notes[:30])
+                    scene.addItem(line9)
+                    current += distance
+                    line9.setPos(0.11 * width, current)
+                    line9.setFont(font1)
+
+                    line10 = QtWidgets.QGraphicsTextItem('Notes:   ' + notes[30:60] + '...')
+                    scene.addItem(line10)
+                    current += distance
+                    line10.setPos(0.11 * width, current)
+                    line10.setFont(font1)
+                else:
+                    line9 = QtWidgets.QGraphicsTextItem('Notes:   ' + notes)
+                    scene.addItem(line9)
+                    current += distance
+                    line9.setPos(0.11 * width, current)
+                    line9.setFont(font1)
 
                 # print(scene.width())
                 # print(scene.height())
@@ -778,10 +870,11 @@ class Ui_Dialog(QtCore.QObject):
                 print(err)
 
         elif self.tag_size_box.currentText() == '80*60':
+            current = 0
             try:
                 rect_item = QtWidgets.QGraphicsRectItem(QtCore.QRectF(0.18 * width, 0, width * 0.64, 0.75 * 0.64 * width))
                 scene.addItem(rect_item)
-                distance = width * 0.64 * 0.75 / 8
+                distance = width * 0.64 * 0.75 / 10
                 # scene.addText("Hello, world!")
                 font1 = QtGui.QFont()
                 font2 = QtGui.QFont()
@@ -795,10 +888,12 @@ class Ui_Dialog(QtCore.QObject):
                 line1.setFont(font1)
 
                 company = self.to_print[index]['company']
-                line2 = QtWidgets.QGraphicsTextItem('Company: ' + company)# + (31-len(company))*' ')
-                scene.addItem(line2)
-                line2.setPos(0.19 * width, distance)
-                line2.setFont(font1)
+                if (len(company.strip()) != 0):
+                    line2 = QtWidgets.QGraphicsTextItem('Company: ' + company)# + (31-len(company))*' ')
+                    scene.addItem(line2)
+                    current += distance
+                    line2.setPos(0.19 * width, current)
+                    line2.setFont(font1)
 
                 address1 = self.to_print[index]['address1']
                 line3 = QtWidgets.QGraphicsTextItem('Address: '+ address1 )#+ (31- len(address1))*' ' )
@@ -807,36 +902,65 @@ class Ui_Dialog(QtCore.QObject):
                 line3.setFont(font1)
 
                 address2 = self.to_print[index]['address2']
-                line4 = QtWidgets.QGraphicsTextItem('         ' + address2)# + (31- len(address2))*' ')
-                scene.addItem(line4)
-                line4.setPos(0.19 * width, distance * 3)
-                line4.setFont(font1)
+                if (len(address2.strip()) != 0):
+                    line4 = QtWidgets.QGraphicsTextItem('         ' + address2)# + (31- len(address2))*' ')
+                    scene.addItem(line4)
+                    current += distance
+                    line4.setPos(0.19 * width, current)
+                    line4.setFont(font1)
 
                 address3 = self.to_print[index]['address3']
-                line5 = QtWidgets.QGraphicsTextItem('         ' + address3)# + (31- len(address3))*' ')
-                scene.addItem(line5)
-                line5.setPos(0.19 * width, distance * 4)
-                line5.setFont(font1)
+                if (len(address3.strip()) != 0):
+                    line5 = QtWidgets.QGraphicsTextItem('         ' + address3)# + (31- len(address3))*' ')
+                    scene.addItem(line5)
+                    current += distance
+                    line5.setPos(0.19 * width, current)
+                    line5.setFont(font1)
 
                 phone = self.to_print[index]['phone']
-                line6 = QtWidgets.QGraphicsTextItem('Phone:   ' + phone)# + (31-len(phone))*' ')
-                scene.addItem(line6)
-                line6.setPos(0.19 * width, distance * 5)
-                line6.setFont(font1)
+                if (len(phone.strip()) != 0):
+                    line6 = QtWidgets.QGraphicsTextItem('Phone:   ' + phone)# + (31-len(phone))*' ')
+                    scene.addItem(line6)
+                    current += distance
+                    line6.setPos(0.19 * width, current)
+                    line6.setFont(font1)
 
                 city = self.to_print[index]['city']
-                line7 = QtWidgets.QGraphicsTextItem('City:    ' + city)# + (31-len(city))*' ')
-                scene.addItem(line7)
-                line7.setPos(0.19 * width, distance * 6)
-                line7.setFont(font1)
+                if (len(city.strip()) != 0):
+                    line7 = QtWidgets.QGraphicsTextItem('City:    ' + city)# + (31-len(city))*' ')
+                    scene.addItem(line7)
+                    current += distance
+                    line7.setPos(0.19 * width, current)
+                    line7.setFont(font1)
 
                 country = self.to_print[index]['country']
                 postcode = self.to_print[index]['postcode']
                 line8 = QtWidgets.QGraphicsTextItem(
                     'Country: ' + country + (15 - len(postcode) - len(country)) * ' ' + ' Postcode: ' + postcode)
                 scene.addItem(line8)
-                line8.setPos(0.19 * width, distance * 7)
+                current += distance
+                line8.setPos(0.19 * width, current)
                 line8.setFont(font1)
+
+                notes = self.to_print[index]['notes']
+                if(len(notes)>30):
+                    line9 = QtWidgets.QGraphicsTextItem('Notes:   ' + notes[:30])
+                    scene.addItem(line9)
+                    current += distance
+                    line9.setPos(0.19 * width, current)
+                    line9.setFont(font1)
+
+                    line10 = QtWidgets.QGraphicsTextItem('Notes:   ' + notes[30:60] + '...')
+                    scene.addItem(line10)
+                    current += distance
+                    line10.setPos(0.19 * width, current)
+                    line10.setFont(font1)
+                else:
+                    line9 = QtWidgets.QGraphicsTextItem('Notes:   ' + notes)
+                    scene.addItem(line9)
+                    current += distance
+                    line9.setPos(0.19 * width, current)
+                    line9.setFont(font1)
 
                 self.graphicsView_2.setScene(scene)
             except Exception as err:
@@ -866,46 +990,122 @@ class Ui_Dialog(QtCore.QObject):
         copy = self.number_of_copy.value()
         self.prev_button.setDisabled(True)
         self.next_button.setDisabled(True)
+
+        engine = create_engine(db_link, echo=False)
+        metadata = MetaData(engine)
+        Session = sessionmaker(bind=engine)
+        session = Session()
+
         while copy != 0:
             try:
                 if self.tag_size_box.currentText() == '100*80':
-                    font_width = self.font_100
+                    font_width = self.font_box.value()
+
                     X = self.x_100
                     Y = self.y_100
-                    Y_distance = self.y_100_distance
+                    height = 60
+                    Y_distance = self.line_box.value()
+
+                    # add if new
+                    last = session.query(PrintSize).filter(PrintSize.tag_size=='10')\
+                        .filter(PrintSize.line_space==Y_distance).filter(PrintSize.font_size==font_width).first()
+                    if last is None:
+                        session.add(PrintSize(tag_size='10',last_use='1',line_space=Y_distance,font_size=font_width))
+                        to_be_update = session.query(PrintSize).filter(PrintSize.last_use == '1').filter(
+                            PrintSize.tag_size == '10').first()
+                        to_be_update.last_use = '0'
+                        session.commit()
+                        session.close()
+                    else:
+                        to_be_update = session.query(PrintSize).filter(PrintSize.last_use=='1').filter(PrintSize.tag_size=='10').first()
+                        to_be_update.last_use = '0'
+                        last.last_use = '1'
+                        session.commit()
+                        session.close()
+
+
+
                 elif self.tag_size_box.currentText() == '80*60':
-                    font_width = self.font_80
+                    font_width = self.font_box.value()
                     X = self.x_80
                     Y = self.y_80
-                    Y_distance = self.y_80_distance
+                    height = 50
+                    Y_distance = self.line_box.value()
 
+                    last = session.query(PrintSize).filter(PrintSize.tag_size == '8') \
+                        .filter(PrintSize.line_space == Y_distance).filter(PrintSize.font_size == font_width).first()
+                    if last is None:
+                        session.add(PrintSize(tag_size='8', last_use='1', line_space=Y_distance, font_size=font_width))
+                        to_be_update = session.query(PrintSize).filter(PrintSize.last_use == '1').filter(
+                            PrintSize.tag_size == '8').first()
+                        to_be_update.last_use = '0'
+                        session.commit()
+                        session.close()
+                    else:
+                        to_be_update = session.query(PrintSize).filter(PrintSize.last_use == '1').filter(
+                            PrintSize.tag_size == '8').first()
+                        to_be_update.last_use = '0'
+                        last.last_use = '1'
+                        session.commit()
+                        session.close()
+
+
+                session.query(PrintSize).filter()
+
+                multi_line_string = []
                 name = self.to_print[self.current_index]['name']
                 line1 = ('Name:        ' + name)
+                multi_line_string.append(line1)
                 company = self.to_print[self.current_index]['company']
                 line2 = ('Company:  ' + company)
+                if(len(company.strip())!=0):
+                    multi_line_string.append(line2)
 
                 address1 = self.to_print[self.current_index]['address1']
                 line3 = ('Address:    ' + address1)
+                multi_line_string.append(line3)
+
                 address2 = self.to_print[self.current_index]['address2']
                 line4 = ('                   ' + address2)
+                multi_line_string.append(line4)
+
                 address3 = self.to_print[self.current_index]['address3']
                 line5 = ('                   ' + address3)
+                if (len(address3.strip()) != 0):
+                    multi_line_string.append(line5)
 
                 phone = self.to_print[self.current_index]['phone']
                 line6 = ('Phone:       ' + phone)
+                if (len(phone.strip()) != 0):
+                    multi_line_string.append(line6)
 
                 city = self.to_print[self.current_index]['city']
                 line7 = ('City:           ' + city)
+                if (len(city.strip()) != 0):
+                    multi_line_string.append(line7)
 
                 country = self.to_print[self.current_index]['country']
                 postcode = self.to_print[self.current_index]['postcode']
                 line8 = (
                         'Country:    ' + country + (20 - len(postcode) - len(country)) * ' ' + ' Postcode: ' + postcode)
-                multi_line_string = [line1, line2, line3, line4, line5, line6, line7, line8]
+                multi_line_string.append(line8)
+
+                notes = self.to_print[self.current_index]['notes']
+                if(len(notes)>30):
+                    line9 = ('Notes:       ' + notes[0:30])
+                    multi_line_string.append(line9)
+                    line10 = ('              ' + notes[30:60] + '...')
+                    multi_line_string.append(line10)
+                elif(len(notes.strip())==0):
+                    pass
+                else:
+                    line9 = ('Notes:       ' + notes[0:30])
+                    multi_line_string.append(line9)
+
                 fontdata = {
                     'name': 'Arial',
                     # 'weight': win32con.FW_NORMAL,
-                    'height': 60, 'width': font_width}
+                    'height': height, 'width': font_width}
 
             except Exception as err:
                 print(err)
@@ -991,14 +1191,16 @@ class Ui_Dialog(QtCore.QObject):
                     X = self.x_100
                     Y = self.y_100
                     Y_distance = self.y_100_distance
+                    height = 60
                 elif self.tag_size_box.currentText() == '80*60':
                     font_width = self.font_80
                     X = self.x_80
                     Y = self.y_80
+                    height = 50
                     Y_distance = self.y_80_distance
 
                 name = self.current_sender['sender_name']
-                line1 = ('Name:        ' + name)
+                line1 = ('Sender:        ' + name)
                 company = self.current_sender['sender_company']
                 line2 = ('Company:  ' + company)
 
@@ -1021,7 +1223,7 @@ class Ui_Dialog(QtCore.QObject):
                     'Country:    ' + country + (20 - len(postcode) - len(country)) * ' ' + ' Postcode: ' + postcode)
                 multi_line_string = [line1,line2,line3,line4,line5,line6,line7,line8]
 
-                fontdata = {'name': 'Arial', 'weight': win32con.FW_NORMAL, 'height': 60, 'width': font_width}
+                fontdata = {'name': 'Arial', 'weight': win32con.FW_NORMAL, 'height': height, 'width': font_width}
             except Exception as err:
                 logger.info(err, exc_info=True)
                 print(err)
@@ -1047,6 +1249,25 @@ class Ui_Dialog(QtCore.QObject):
 
 
     def changeEvent(self,e):
+
+        current_size = self.tag_size_box.currentText()
+        print(current_size)
+        engine = create_engine(db_link, echo=False)
+        metadata = MetaData(engine)
+        Session = sessionmaker(bind=engine)
+        session = Session()
+
+        # get default size
+        last_two = session.query(PrintSize).filter(PrintSize.last_use == '1')
+        if(current_size == '80*60'):
+            spec_8 = last_two.filter(PrintSize.tag_size=='8').first()
+            self.font_box.setValue(spec_8.font_size)
+            self.line_box.setValue(spec_8.line_space)
+        elif(current_size == '100*80'):
+            spec_10 = last_two.filter(PrintSize.tag_size == '10').first()
+            self.font_box.setValue(spec_10.font_size)
+            self.line_box.setValue(spec_10.line_space)
+
         try:
             print('change event')
             if self.sender_choice_box.currentText()!= '':

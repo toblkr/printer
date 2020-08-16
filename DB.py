@@ -91,7 +91,12 @@ class PrintSize(Base):
     __tablename__ = 'print_size'
 
     # 表的结构:
-    id = Column(String(20), primary_key=True)
+    id = Column(Integer(), primary_key=True,autoincrement=True)
+    tag_size = Column(String(4))
+    last_use = Column(String(2))
+    font_size = Column(Integer())
+    line_space = Column(Integer())
+
 
 
 class Center(Base):
@@ -112,10 +117,39 @@ class Center(Base):
 
 def init_db():
     engine = create_engine(db_link,echo=False)
+    font_80 = 12
+    font_100 = 15
+    y_100_distance = 62
+    y_80_distance = 45
+
     if not engine.dialect.has_table(engine, 'center'):
         print('Database not exist')
         Base.metadata.create_all(engine)
         print('created')
     else:
         print('Database already there')
+        try:
+            Session = sessionmaker(bind=engine)
+            session = Session()
+            data = session.query(PrintSize).all()
+            if(len(data)==0):
+                Size_100 = PrintSize(tag_size='10',last_use='1',font_size=font_100,line_space=y_100_distance)
+                Size_80 = PrintSize(tag_size='8', last_use='1', font_size=font_80,line_space=y_80_distance)
+                session.add(Size_100)
+                session.add(Size_80)
+                session.commit()
+            print(data[0].line_space)
+        except Exception as e:
+            PrintSize.__table__.drop(engine)
+            Base.metadata.create_all(engine)
+            Session = sessionmaker(bind=engine)
+            session = Session()
+            data = session.query(PrintSize).all()
+            Size_100 = PrintSize(tag_size='10', last_use='1', font_size=font_100, line_space=y_100_distance)
+            Size_80 = PrintSize(tag_size='8', last_use='1', font_size=font_80, line_space=y_80_distance)
+            session.add(Size_100)
+            session.add(Size_80)
+            session.commit()
+            print(data)
+
 

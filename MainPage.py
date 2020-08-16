@@ -552,6 +552,7 @@ class Ui_MainWindow(object):
         metadata = MetaData(engine)
         Session = sessionmaker(bind=engine)
         session = Session()
+        long_id = []
         print('importing')
         try:
             file_dialog = QFileDialog()
@@ -583,29 +584,29 @@ class Ui_MainWindow(object):
                             id = id + '(1)'
 
 
-                    batch = worksheet.row_values(i)[1]
-                    company_name = worksheet.row_values(i)[2]
-                    contact_name = worksheet.row_values(i)[3]
-                    title = worksheet.row_values(i)[4]
-                    other_title = worksheet.row_values(i)[5]
-                    first_name = worksheet.row_values(i)[6]
-                    last_name = worksheet.row_values(i)[7]
-                    market_group = worksheet.row_values(i)[8]
-                    address_one = worksheet.row_values(i)[9]
-                    address_two = worksheet.row_values(i)[10]
-                    address_three = worksheet.row_values(i)[11]
-                    phone_number_prefix = worksheet.row_values(i)[12]
+                    batch = worksheet.row_values(i)[1][:50]
+                    company_name = worksheet.row_values(i)[2][:30]
+                    contact_name = worksheet.row_values(i)[3][:34]
+                    title = worksheet.row_values(i)[4][:5]
+                    other_title = worksheet.row_values(i)[5][:20]
+                    first_name = worksheet.row_values(i)[6][:20]
+                    last_name = worksheet.row_values(i)[7][:20]
+                    market_group = worksheet.row_values(i)[8][:50]
+                    address_one = worksheet.row_values(i)[9][:30]
+                    address_two = worksheet.row_values(i)[10][:30]
+                    address_three = worksheet.row_values(i)[11][:30]
+                    phone_number_prefix = worksheet.row_values(i)[12][:10]
 
-                    phone_number = worksheet.row_values(i)[13]
-                    fax_number_prefix = worksheet.row_values(i)[14]
-                    fax_number = worksheet.row_values(i)[15]
-                    city = worksheet.row_values(i)[16]
-                    post_code = worksheet.row_values(i)[17]
-                    country = worksheet.row_values(i)[18]
-                    notes = worksheet.row_values(i)[19]
-                    email_one = worksheet.row_values(i)[20]
-                    email_two = worksheet.row_values(i)[21]
-                    email_three = worksheet.row_values(i)[22]
+                    phone_number = worksheet.row_values(i)[13][:30]
+                    fax_number_prefix = worksheet.row_values(i)[14][:10]
+                    fax_number = worksheet.row_values(i)[15][:30]
+                    city = worksheet.row_values(i)[16][:35]
+                    post_code = worksheet.row_values(i)[17][:10]
+                    country = worksheet.row_values(i)[18][:30]
+                    notes = worksheet.row_values(i)[19][:500]
+                    email_one = worksheet.row_values(i)[20][:50]
+                    email_two = worksheet.row_values(i)[21][:50]
+                    email_three = worksheet.row_values(i)[22][:50]
                     excel_create_date = worksheet.row_values(i)[23]
                     excel_update_date = worksheet.row_values(i)[24]
                     # print(type(excel_create_date))
@@ -619,24 +620,18 @@ class Ui_MainWindow(object):
 
                     # print(create_date)
                     # print(type(create_date))
-
-                    session.add(Customer(id=id,batch=batch,company_name=company_name,contact_name=contact_name,title=title,other_title=other_title,
-                                         first_name=first_name,last_name=last_name,market_group=market_group,address_one=address_one,
-                                         address_two=address_two,address_three=address_three,phone_number_prefix=phone_number_prefix,country=country,
-                                         phone_number=phone_number,fax_number_prefix=fax_number_prefix,fax_number=fax_number,city=city,
-                                         post_code=post_code,notes=notes,email_one=email_one,email_two=email_two,email_three=email_three,create_date=create_date
-                                         ,update_date=update_date))
-                # print(rows)
-                # print(rows[0])
-                # print(rows[0].id)
-                # print(rows[1].id)
-                # print(rows[2].id)
-                # print(rows[3].id)
-                # print(rows[4].id)
-                # try:
-                #     # session.bulk_save_objects(rows)
-                # except Exception as err:
-                #     print(err)
+                    try:
+                        session.add(Customer(id=id,batch=batch,company_name=company_name,contact_name=contact_name,title=title,other_title=other_title,
+                                             first_name=first_name,last_name=last_name,market_group=market_group,address_one=address_one,
+                                             address_two=address_two,address_three=address_three,phone_number_prefix=phone_number_prefix,country=country,
+                                             phone_number=phone_number,fax_number_prefix=fax_number_prefix,fax_number=fax_number,city=city,
+                                             post_code=post_code,notes=notes,email_one=email_one,email_two=email_two,email_three=email_three,create_date=create_date
+                                             ,update_date=update_date))
+                    except Exception as err:
+                        msg = QMessageBox()
+                        msg.setWindowTitle("Error")
+                        msg.setText(err)
+                        x = msg.exec_()
                 print('end')
                 session.commit()
                 session.close()
